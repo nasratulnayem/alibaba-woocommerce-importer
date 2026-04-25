@@ -66,9 +66,55 @@ function atw_fs(): ?object {
 		)
 	);
 
+	$atw_fs->add_action( 'after_uninstall', 'atw_fs_uninstall_cleanup' );
+
 	do_action( 'atw_fs_loaded' );
 
 	return $atw_fs;
+}
+
+function atw_fs_uninstall_cleanup(): void {
+	global $wpdb;
+
+	$table = $wpdb->prefix . 'awi_usage_log';
+	$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+	delete_option( 'awi_ai_settings' );
+
+	$wpdb->query(
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_awi_pending_connect_%' OR option_name LIKE '_transient_timeout_awi_pending_connect_%'"
+	); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+	$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => '_awi_extension_settings_v1' ), array( '%s' ) );
+	$wpdb->delete( $wpdb->usermeta, array( 'meta_key' => '_awi_rate_limit' ), array( '%s' ) );
+
+	$uploads  = wp_upload_dir();
+	$base_dir = trailingslashit( (string) $uploads['basedir'] ) . 'atw-url-import';
+	if ( is_dir( $base_dir ) ) {
+		atw_fs_rmdir( $base_dir );
+	}
+}
+
+function atw_fs_rmdir( string $dir ): void {
+	if ( ! is_dir( $dir ) ) {
+		return;
+	}
+	$items = scandir( $dir );
+	if ( ! is_array( $items ) ) {
+		return;
+	}
+	foreach ( $items as $item ) {
+		if ( $item === '.' || $item === '..' ) {
+			continue;
+		}
+		$path = trailingslashit( $dir ) . $item;
+		if ( is_dir( $path ) ) {
+			atw_fs_rmdir( $path );
+		} else {
+			@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+		}
+	}
+	@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
 }
 
 /**
