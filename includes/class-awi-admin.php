@@ -480,7 +480,7 @@ final class AWI_Admin {
 							<h2>Application Passwords</h2>
 							<p>Create Application Passwords for the ATW Chrome extension. Copy the Base URL, Username and password into the extension settings.</p>
 						</div>
-						<a href="https://github.com/nasratulnayem/alibaba-woocommerce-importer/releases/latest" target="_blank" rel="noopener noreferrer" class="awi-btn" style="flex-shrink:0;white-space:nowrap;min-height:36px;padding:8px 16px;font-size:13px;"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:6px;margin-top:-2px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="2" x2="8" y2="11"/><polyline points="4,8 8,12 12,8"/><line x1="2" y1="14" x2="14" y2="14"/></svg>Download Extension</a>
+						<a href="https://github.com/nasratulnayem/alibaba-woocommerce-importer/releases/latest" target="_blank" rel="noopener noreferrer" class="awi-btn" aria-label="Download ATW Chrome Extension from GitHub" style="flex-shrink:0;white-space:nowrap;min-height:36px;padding:8px 16px;font-size:13px;"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:6px;margin-top:-2px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="2" x2="8" y2="11"/><polyline points="4,8 8,12 12,8"/><line x1="2" y1="14" x2="14" y2="14"/></svg>Download Extension</a>
 					</div>
 
 					<div class="awi-info-grid" style="margin-bottom:10px;">
