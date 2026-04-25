@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // ── Replace these two constants before going live ────────────────────────────
-define( 'AWI_FS_PLUGIN_ID', '0000' );              // e.g. '12345'
-define( 'AWI_FS_PUBLIC_KEY', 'pk_REPLACE_WITH_YOUR_KEY' ); // e.g. 'pk_abc123...'
+define( 'AWI_FS_PLUGIN_ID', '28475' );
+define( 'AWI_FS_PUBLIC_KEY', 'pk_899cd9e07ac2b4825e4c96464c7e0' );
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -30,7 +30,7 @@ function atw_fs(): ?object {
 		return $atw_fs;
 	}
 
-	$sdk_start = AWI_PLUGIN_DIR . 'freemius/start.php';
+	$sdk_start = AWI_PLUGIN_DIR . 'vendor/freemius/start.php';
 	if ( ! file_exists( $sdk_start ) ) {
 		// SDK not installed yet — plugin works in free mode silently.
 		return null;
