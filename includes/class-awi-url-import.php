@@ -292,17 +292,17 @@ final class AWI_Url_Import {
 
 	public static function handle_failed_log(): void {
 		if ( ! self::can_manage() ) {
-			wp_die( esc_html__( 'You do not have permission to access this log.', 'awi' ) );
+			wp_die( esc_html__( 'You do not have permission to access this log.', 'atw-alibaba-product-importer' ) );
 		}
 
 		$run_id = isset( $_GET['run_id'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['run_id'] ) ) : '';
 		if ( ! wp_verify_nonce( isset( $_GET['_wpnonce'] ) ? (string) wp_unslash( $_GET['_wpnonce'] ) : '', 'awi_url_import_failed_log_' . $run_id ) ) {
-			wp_die( esc_html__( 'Invalid log link.', 'awi' ) );
+			wp_die( esc_html__( 'Invalid log link.', 'atw-alibaba-product-importer' ) );
 		}
 
 		$run = self::load_run( $run_id );
 		if ( ! $run ) {
-			wp_die( esc_html__( 'Import run not found.', 'awi' ) );
+			wp_die( esc_html__( 'Import run not found.', 'atw-alibaba-product-importer' ) );
 		}
 
 		$paths = self::ensure_storage_paths();
@@ -316,7 +316,7 @@ final class AWI_Url_Import {
 		}
 
 		if ( ! file_exists( $log_path ) ) {
-			wp_die( esc_html__( 'Failed log is not available.', 'awi' ) );
+			wp_die( esc_html__( 'Failed log is not available.', 'atw-alibaba-product-importer' ) );
 		}
 
 		nocache_headers();

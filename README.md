@@ -6,7 +6,7 @@
 [![WooCommerce](https://img.shields.io/badge/WooCommerce-8.0%2B-purple?logo=woocommerce)](https://woocommerce.com)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php)](https://php.net)
 [![License](https://img.shields.io/badge/License-GPLv2%2B-green)](https://www.gnu.org/licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/Version-0.1.0-orange)](https://github.com/nasratulnayem/atw-alibaba-importer/releases)
+[![Version](https://img.shields.io/badge/Version-0.1.0-orange)](https://github.com/nasratulnayem/atw-alibaba-product-importer/releases)
 
 ---
 
@@ -74,7 +74,7 @@ POST /wp-json/awi/v1/import              Batch URL Import (Admin)
 
 ### Plugin
 
-1. Download the latest release from the [Releases page](https://github.com/nasratulnayem/atw-alibaba-importer/releases/latest).
+1. Download the latest release from the [Releases page](https://github.com/nasratulnayem/atw-alibaba-product-importer/releases/latest).
 2. Upload to `/wp-content/plugins/` and activate.
 3. WooCommerce must be installed and active.
 
@@ -142,8 +142,8 @@ AI rewrites product **title**, **short description**, and **long description** u
 ## File Structure
 
 ```
-atw-alibaba-importer/
-├── atw-alibaba-importer.php           # Plugin entry point
+atw-alibaba-product-importer/
+├── atw-alibaba-product-importer.php   # Plugin entry point
 ├── README.txt                         # WordPress.org readme
 ├── license.txt                        # GPL license
 ├── assets/

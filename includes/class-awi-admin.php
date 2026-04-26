@@ -34,10 +34,10 @@ final class AWI_Admin {
 		?>
 		<div class="notice notice-warning">
 			<p>
-				<strong><?php esc_html_e( 'ATW — Alibaba Product Importer:', 'awi' ); ?></strong>
-				<?php esc_html_e( 'Application Passwords are not yet enabled on this site. The Chrome extension will not be able to authenticate until they are enabled.', 'awi' ); ?>
+				<strong><?php esc_html_e( 'ATW — Alibaba Product Importer:', 'atw-alibaba-product-importer' ); ?></strong>
+				<?php esc_html_e( 'Application Passwords are not yet enabled on this site. The Chrome extension will not be able to authenticate until they are enabled.', 'atw-alibaba-product-importer' ); ?>
 				<a href="<?php echo esc_url( $action_url ); ?>" class="button button-secondary" style="margin-left:8px;">
-					<?php esc_html_e( 'Enable Application Passwords', 'awi' ); ?>
+					<?php esc_html_e( 'Enable Application Passwords', 'atw-alibaba-product-importer' ); ?>
 				</a>
 			</p>
 		</div>
@@ -47,7 +47,7 @@ final class AWI_Admin {
 	public static function handle_enable_app_passwords(): void {
 		check_admin_referer( 'awi_enable_app_passwords' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'awi' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'atw-alibaba-product-importer' ) );
 		}
 		if ( function_exists( 'get_main_network_id' ) && function_exists( 'update_network_option' ) ) {
 			update_network_option( get_main_network_id(), 'using_application_passwords', 1 );
@@ -71,8 +71,8 @@ final class AWI_Admin {
 
 		self::$url_import_hook_suffix = (string) add_submenu_page(
 			'atw',
-			__( 'URL Import', 'awi' ),
-			__( 'URL Import', 'awi' ),
+			__( 'URL Import', 'atw-alibaba-product-importer' ),
+			__( 'URL Import', 'atw-alibaba-product-importer' ),
 			$cap,
 			'atw-url-import',
 			array( __CLASS__, 'render_url_import_page' )
@@ -80,8 +80,8 @@ final class AWI_Admin {
 
 		self::$legacy_hook_suffix = (string) add_submenu_page(
 			null,
-			__( 'Alibaba Import', 'awi' ),
-			__( 'Alibaba Import', 'awi' ),
+			__( 'Alibaba Import', 'atw-alibaba-product-importer' ),
+			__( 'Alibaba Import', 'atw-alibaba-product-importer' ),
 			$cap,
 			'awi-alibaba-import',
 			array( __CLASS__, 'render_legacy_redirect' )
@@ -155,7 +155,7 @@ final class AWI_Admin {
 		$current_user = wp_get_current_user();
 
 		if ( isset( $_GET['awi_app_pw_enabled'] ) ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Application Passwords enabled. The Chrome extension can now authenticate.', 'awi' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Application Passwords enabled. The Chrome extension can now authenticate.', 'atw-alibaba-product-importer' ) . '</p></div>';
 		}
 
 		// Application Password management.
@@ -168,7 +168,7 @@ final class AWI_Admin {
 			if ( isset( $_POST['awi_create_apppass'] ) && check_admin_referer( 'awi_apppass_action', 'awi_apppass_nonce' ) ) {
 				$pw_name = isset( $_POST['awi_apppass_name'] ) ? sanitize_text_field( wp_unslash( $_POST['awi_apppass_name'] ) ) : '';
 				if ( $pw_name === '' ) {
-					$apppass_error = __( 'Please enter a name for the Application Password.', 'awi' );
+					$apppass_error = __( 'Please enter a name for the Application Password.', 'atw-alibaba-product-importer' );
 				} else {
 					$result = WP_Application_Passwords::create_new_application_password( $current_user->ID, array( 'name' => $pw_name ) );
 					if ( is_wp_error( $result ) ) {
@@ -176,7 +176,7 @@ final class AWI_Admin {
 					} else {
 						$apppass_new_plain = $result[0];
 						/* translators: %s: Application Password name */
-						$apppass_notice = sprintf( __( 'Application Password created for "%s".', 'awi' ), esc_html( $pw_name ) );
+						$apppass_notice = sprintf( __( 'Application Password created for "%s".', 'atw-alibaba-product-importer' ), esc_html( $pw_name ) );
 					}
 				}
 			}
@@ -184,12 +184,12 @@ final class AWI_Admin {
 				$uuid = sanitize_text_field( wp_unslash( $_POST['awi_revoke_uuid'] ?? '' ) );
 				if ( $uuid !== '' ) {
 					$del = WP_Application_Passwords::delete_application_password( $current_user->ID, $uuid );
-					$apppass_notice = is_wp_error( $del ) ? $del->get_error_message() : __( 'Application Password revoked.', 'awi' );
+					$apppass_notice = is_wp_error( $del ) ? $del->get_error_message() : __( 'Application Password revoked.', 'atw-alibaba-product-importer' );
 				}
 			}
 			if ( isset( $_POST['awi_revoke_all_apppass'] ) && check_admin_referer( 'awi_apppass_action', 'awi_apppass_nonce' ) ) {
 				WP_Application_Passwords::delete_all_application_passwords( $current_user->ID );
-				$apppass_notice = __( 'All Application Passwords revoked.', 'awi' );
+				$apppass_notice = __( 'All Application Passwords revoked.', 'atw-alibaba-product-importer' );
 			}
 		}
 
@@ -202,7 +202,7 @@ final class AWI_Admin {
 		<meta name="awi-url-import-bridge" content="1">
 			<div class="awi-hero awi-hero--settings">
 				<div class="awi-hero-copy">
-					<h1><?php esc_html_e( 'ATW — Alibaba Product Importer', 'awi' ); ?></h1>
+					<h1><?php esc_html_e( 'ATW — Alibaba Product Importer', 'atw-alibaba-product-importer' ); ?></h1>
 					<p>Manage the AI rewrite layer, generate secure WordPress credentials for the extension, and launch bulk imports from a cleaner control panel.</p>
 				</div>
 				<div class="awi-hero-side">
@@ -267,19 +267,19 @@ final class AWI_Admin {
 						<div class="awi-ai-summary">
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Rewrite</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_enabled'] ? esc_html__( 'Enabled', 'awi' ) : esc_html__( 'Disabled', 'awi' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_enabled'] ? esc_html__( 'Enabled', 'atw-alibaba-product-importer' ) : esc_html__( 'Disabled', 'atw-alibaba-product-importer' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Provider</span>
-								<strong class="awi-ai-summary-value"><?php echo 'gemini_first' === $state['ai_provider_order'] ? esc_html__( 'Gemini → OpenAI', 'awi' ) : esc_html__( 'OpenAI → Gemini', 'awi' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo 'gemini_first' === $state['ai_provider_order'] ? esc_html__( 'Gemini → OpenAI', 'atw-alibaba-product-importer' ) : esc_html__( 'OpenAI → Gemini', 'atw-alibaba-product-importer' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">OpenAI</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_openai_key_saved'] ? esc_html__( 'Ready', 'awi' ) : esc_html__( 'Not Set', 'awi' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_openai_key_saved'] ? esc_html__( 'Ready', 'atw-alibaba-product-importer' ) : esc_html__( 'Not Set', 'atw-alibaba-product-importer' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Gemini</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_gemini_key_saved'] ? esc_html__( 'Ready', 'awi' ) : esc_html__( 'Not Set', 'awi' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_gemini_key_saved'] ? esc_html__( 'Ready', 'atw-alibaba-product-importer' ) : esc_html__( 'Not Set', 'atw-alibaba-product-importer' ); ?></strong>
 							</div>
 						</div>
 
@@ -481,7 +481,7 @@ final class AWI_Admin {
 							<h2>Application Passwords</h2>
 							<p>Create Application Passwords for the ATW Chrome extension. Copy the Base URL, Username and password into the extension settings.</p>
 						</div>
-						<a href="https://github.com/nasratulnayem/atw-alibaba-importer/releases/latest/download/ATW-Chrome-Extension.zip" target="_blank" rel="noopener noreferrer" class="awi-btn" aria-label="Download ATW Chrome Extension from GitHub" style="flex-shrink:0;white-space:nowrap;min-height:36px;padding:8px 16px;font-size:13px;"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:6px;margin-top:-2px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="2" x2="8" y2="11"/><polyline points="4,8 8,12 12,8"/><line x1="2" y1="14" x2="14" y2="14"/></svg>Download Extension</a>
+						<a href="https://github.com/nasratulnayem/atw-alibaba-product-importer/releases/latest/download/ATW-Chrome-Extension.zip" target="_blank" rel="noopener noreferrer" class="awi-btn" aria-label="Download ATW Chrome Extension from GitHub" style="flex-shrink:0;white-space:nowrap;min-height:36px;padding:8px 16px;font-size:13px;"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:6px;margin-top:-2px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="2" x2="8" y2="11"/><polyline points="4,8 8,12 12,8"/><line x1="2" y1="14" x2="14" y2="14"/></svg>Download Extension</a>
 					</div>
 
 					<div class="awi-info-grid" style="margin-bottom:10px;">
@@ -643,9 +643,9 @@ final class AWI_Admin {
 						</h2>
 						<p>
 							<?php if ( $q_is_pro ) : ?>
-								<?php esc_html_e( 'Pro plan — unlimited imports, no cooldown.', 'awi' ); ?>
+								<?php esc_html_e( 'Pro plan — unlimited imports, no cooldown.', 'atw-alibaba-product-importer' ); ?>
 							<?php else : ?>
-								<?php printf( esc_html__( 'Free plan: %d imports per hour. Limit reached triggers an 8-hour cooldown.', 'awi' ), (int) $q_limit ); ?>
+								<?php printf( esc_html__( 'Free plan: %d imports per hour. Limit reached triggers an 8-hour cooldown.', 'atw-alibaba-product-importer' ), (int) $q_limit ); ?>
 							<?php endif; ?>
 						</p>
 					</div>
@@ -653,7 +653,7 @@ final class AWI_Admin {
 						<span class="awi-status-pill awi-status-pill--success">Pro</span>
 					<?php else : ?>
 						<span class="awi-status-pill <?php echo $q_blocked ? 'awi-status-pill--danger' : ( $q_remaining <= 5 ? 'awi-status-pill--warning' : 'awi-status-pill--success' ); ?>" id="awi-quota-pill">
-							<?php echo $q_blocked ? esc_html__( 'Blocked', 'awi' ) : esc_html( $q_remaining . ' left' ); ?>
+							<?php echo $q_blocked ? esc_html__( 'Blocked', 'atw-alibaba-product-importer' ) : esc_html( $q_remaining . ' left' ); ?>
 						</span>
 					<?php endif; ?>
 				</div>
@@ -686,10 +686,10 @@ final class AWI_Admin {
 				<?php if ( $upgrade_url !== '' && ( $q_blocked || $q_remaining <= 5 ) ) : ?>
 				<div class="awi-note-box" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
 					<span style="font-size:13px;">
-						<?php esc_html_e( 'Upgrade to Pro for unlimited imports and no cooldown.', 'awi' ); ?>
+						<?php esc_html_e( 'Upgrade to Pro for unlimited imports and no cooldown.', 'atw-alibaba-product-importer' ); ?>
 					</span>
 					<a href="<?php echo esc_url( $upgrade_url ); ?>" class="awi-btn" style="flex-shrink:0;min-height:34px;padding:7px 14px;font-size:12px;" target="_blank" rel="noopener">
-						<?php esc_html_e( 'Upgrade to Pro', 'awi' ); ?>
+						<?php esc_html_e( 'Upgrade to Pro', 'atw-alibaba-product-importer' ); ?>
 					</a>
 				</div>
 				<?php endif; ?>
@@ -952,7 +952,7 @@ final class AWI_Admin {
 
 	private static function assert_access(): void {
 		if ( ! self::can_manage() ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'awi' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'atw-alibaba-product-importer' ) );
 		}
 	}
 

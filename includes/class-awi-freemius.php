@@ -23,7 +23,7 @@ if ( ! function_exists( 'atw_fs' ) ) {
 		$atw_fs = fs_dynamic_init(
 			array(
 				'id'                  => '28475',
-				'slug'                => 'atw-alibaba-importer',
+				'slug'                => 'atw-alibaba-product-importer',
 				'premium_slug'        => 'atw-alibaba-product-importer-premium',
 				'type'                => 'plugin',
 				'public_key'          => 'pk_899cd9e07ac2b4825e4c96464c7e0',

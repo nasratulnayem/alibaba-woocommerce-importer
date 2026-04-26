@@ -10,7 +10,7 @@
  * Requires Plugins: woocommerce
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: awi
+ * Text Domain: atw-alibaba-product-importer
  *
  * Extension-first importer (no scraping UI in admin).
  */
@@ -44,11 +44,11 @@ final class AWI_Plugin {
 	}
 
 	public static function plugins_loaded(): void {
-		load_plugin_textdomain( 'awi', false, dirname( plugin_basename( AWI_PLUGIN_FILE ) ) . '/languages' );
+		load_plugin_textdomain( 'atw-alibaba-product-importer', false, dirname( plugin_basename( AWI_PLUGIN_FILE ) ) . '/languages' );
 
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action( 'admin_notices', function () {
-				echo '<div class="notice notice-error"><p>' . esc_html__( 'ATW — Alibaba Product Importer requires WooCommerce to be installed and active.', 'awi' ) . '</p></div>';
+				echo '<div class="notice notice-error"><p>' . esc_html__( 'ATW — Alibaba Product Importer requires WooCommerce to be installed and active.', 'atw-alibaba-product-importer' ) . '</p></div>';
 			} );
 			return;
 		}

@@ -2,7 +2,7 @@
 Contributors: nasratulnayem
 Tags: woocommerce, import, alibaba, products, chrome extension
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 0.1.0
 License: GPLv2 or later
@@ -43,7 +43,7 @@ The plugin also facilitates importing product data that originates from Alibaba.
 
 == Installation ==
 
-1. Upload the `atw-alibaba-importer` folder to `/wp-content/plugins/`.
+1. Upload the `atw-alibaba-product-importer` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Ensure WooCommerce is installed and active.
 4. Go to **ATW > Settings** in the WordPress admin menu.
