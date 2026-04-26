@@ -29,11 +29,9 @@ final class AWI_Frontend {
 
 		$poster_url = trim( (string) get_post_meta( $product_id, '_awi_video_poster', true ) );
 		$thumb_url  = $poster_url !== '' ? $poster_url : get_the_post_thumbnail_url( $product_id, 'woocommerce_thumbnail' );
-		$poster     = $poster_url !== '' ? ' poster="' . esc_attr( esc_url( $poster_url ) ) . '"' : '';
-		$thumb_attr = $thumb_url !== '' ? ' data-thumb="' . esc_attr( esc_url( $thumb_url ) ) . '"' : '';
 		?>
-		<div class="woocommerce-product-gallery__image awi-product-gallery-video awi-product-gallery-video-slide"<?php echo $thumb_attr; ?> data-thumb-alt="Product video">
-			<video controls playsinline preload="metadata"<?php echo $poster; ?> style="width:100%;height:auto;">
+		<div class="woocommerce-product-gallery__image awi-product-gallery-video awi-product-gallery-video-slide"<?php if ( $thumb_url !== '' ) : ?> data-thumb="<?php echo esc_url( $thumb_url ); ?>"<?php endif; ?> data-thumb-alt="Product video">
+			<video controls playsinline preload="metadata"<?php if ( $poster_url !== '' ) : ?> poster="<?php echo esc_url( $poster_url ); ?>"<?php endif; ?> style="width:100%;height:auto;">
 				<source src="<?php echo esc_url( $video_url ); ?>" type="video/mp4">
 			</video>
 		</div>

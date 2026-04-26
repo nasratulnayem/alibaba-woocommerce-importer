@@ -76,7 +76,7 @@ final class AWI_Rest {
 
 	public static function create_usage_table(): void {
 		global $wpdb;
-		$table   = $wpdb->prefix . 'awi_usage_log';
+		$table   = preg_replace( '/[^A-Za-z0-9_]/', '', $wpdb->prefix . 'awi_usage_log' );
 		$charset = $wpdb->get_charset_collate();
 		$sql     = "CREATE TABLE IF NOT EXISTS {$table} (
 			id          BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -128,10 +128,10 @@ final class AWI_Rest {
 		$raw_header = '';
 		foreach ( array(
 			$request->get_header( 'authorization' ),            // WP parsed header (works on most hosts)
-			isset( $_SERVER['HTTP_AUTHORIZATION'] )          ? $_SERVER['HTTP_AUTHORIZATION']          : '',
-			isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] : '',
+			isset( $_SERVER['HTTP_AUTHORIZATION'] )          ? wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] )          : '',
+			isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ? wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) : '',
 			// FastCGI / CGI fallback (requires RewriteRule in .htaccess or server config)
-			isset( $_SERVER['HTTP_X_AUTHORIZATION'] )        ? $_SERVER['HTTP_X_AUTHORIZATION']        : '',
+			isset( $_SERVER['HTTP_X_AUTHORIZATION'] )        ? wp_unslash( $_SERVER['HTTP_X_AUTHORIZATION'] )        : '',
 		) as $candidate ) {
 			if ( is_string( $candidate ) && trim( $candidate ) !== '' ) {
 				$raw_header = trim( $candidate );
@@ -154,8 +154,8 @@ final class AWI_Rest {
 		// Fallback to PHP_AUTH_* (populated by Apache mod_php automatically).
 		if ( $user === '' && isset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] ) ) {
 			$src  = 'php_auth';
-			$user = (string) $_SERVER['PHP_AUTH_USER'];
-			$pass = (string) $_SERVER['PHP_AUTH_PW'];
+			$user = (string) wp_unslash( $_SERVER['PHP_AUTH_USER'] );
+			$pass = (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] );
 		}
 
 		return array(
@@ -353,7 +353,7 @@ final class AWI_Rest {
 		}
 
 	public static function debug_permissions_check( WP_REST_Request $request ): bool {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
 		if ( in_array( $ip, array( '127.0.0.1', '::1' ), true ) ) {
 			return true;
 		}
@@ -367,9 +367,9 @@ final class AWI_Rest {
 
 		$hdr = '';
 		if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-			$hdr = (string) $_SERVER['HTTP_AUTHORIZATION'];
+			$hdr = (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] );
 		} elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-			$hdr = (string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+			$hdr = (string) wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
 		}
 
 		$scheme = '';
@@ -378,8 +378,8 @@ final class AWI_Rest {
 			$scheme = isset( $parts[0] ) ? strtolower( (string) $parts[0] ) : '';
 		}
 
-		$php_auth_user = isset( $_SERVER['PHP_AUTH_USER'] ) ? (string) $_SERVER['PHP_AUTH_USER'] : '';
-		$php_auth_pw   = isset( $_SERVER['PHP_AUTH_PW'] ) ? (string) $_SERVER['PHP_AUTH_PW'] : '';
+		$php_auth_user = isset( $_SERVER['PHP_AUTH_USER'] ) ? (string) wp_unslash( $_SERVER['PHP_AUTH_USER'] ) : '';
+		$php_auth_pw   = isset( $_SERVER['PHP_AUTH_PW'] ) ? (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] ) : '';
 
 			$user_id = (int) get_current_user_id();
 
@@ -435,8 +435,8 @@ final class AWI_Rest {
 				'home'     => home_url( '/' ),
 				'rest'     => rest_url(),
 				'origin'   => $origin,
-				'remote'   => isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '',
-				'proto'    => isset( $_SERVER['SERVER_PROTOCOL'] ) ? (string) $_SERVER['SERVER_PROTOCOL'] : '',
+				'remote'   => isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '',
+				'proto'    => isset( $_SERVER['SERVER_PROTOCOL'] ) ? (string) wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) : '',
 				'auth'     => array(
 					'http_authorization_present' => $hdr !== '',
 					'http_authorization_len'     => $hdr !== '' ? strlen( $hdr ) : 0,
@@ -521,7 +521,7 @@ final class AWI_Rest {
 			[ $plain_password ] = $result;
 
 			$token      = bin2hex( random_bytes( 24 ) );
-			$origin_ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+			$origin_ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
 
 			set_transient(
 				'awi_pending_connect_' . $token,
@@ -561,7 +561,7 @@ final class AWI_Rest {
 			// Skipped when origin_ip is empty (old transients) or when behind a reverse proxy
 			// where REMOTE_ADDR may differ from the browser IP.
 			$stored_ip  = isset( $data['origin_ip'] ) ? (string) $data['origin_ip'] : '';
-			$request_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+			$request_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
 			if ( $stored_ip !== '' && $request_ip !== '' && $stored_ip !== $request_ip ) {
 				// Consume token to prevent replay attempts, then reject.
 				delete_transient( 'awi_pending_connect_' . $token );
@@ -717,6 +717,7 @@ final class AWI_Rest {
 
 		$update_existing = ! empty( $p['update_existing'] );
 		$download_images = array_key_exists( 'download_images', $p ) ? (bool) $p['download_images'] : true;
+		$ai_settings     = self::get_ai_settings();
 
 			$wants_variable = ! empty( $p['variations'] ) && is_array( $p['variations'] );
 			$attr_payload   = ( ! empty( $p['attributes'] ) && is_array( $p['attributes'] ) ) ? $p['attributes'] : array();
@@ -780,16 +781,11 @@ final class AWI_Rest {
 			$product->set_status( 'publish' );
 		}
 
-		// Always use formatted SKU (F0G000K pattern). Keep existing for updates, generate fresh for new.
-		$sku = '';
-		if ( $is_update && $product instanceof WC_Product ) {
-			$sku = trim( (string) $product->get_sku() );
-		}
-		if ( $sku === '' ) {
-			$sku = self::generate_unique_sku();
-		}
+		$sku = self::resolve_import_sku( $product, $original_sku, $is_update, $ai_settings );
 
-		$product->set_sku( $sku );
+		if ( $sku !== '' ) {
+			$product->set_sku( $sku );
+		}
 		$product->set_name( $name );
 		self::maybe_set_optimized_slug( $product, $name, $sku, $source_url, $is_update );
 
@@ -866,9 +862,11 @@ final class AWI_Rest {
 				}
 			}
 
-			$tag_names = self::build_product_tag_names( $p, $name, $attr_payload, $category_ids, $product_id );
-			if ( $tag_names ) {
-				wp_set_object_terms( $product_id, $tag_names, 'product_tag', false );
+			if ( ! empty( $ai_settings['auto_tags'] ) ) {
+				$tag_names = isset( $import_copy['tags'] ) && is_array( $import_copy['tags'] ) ? self::normalize_tag_names( $import_copy['tags'] ) : array();
+				if ( $tag_names ) {
+					wp_set_object_terms( $product_id, $tag_names, 'product_tag', false );
+				}
 			}
 
 		self::flush_usage_to_db( $product_id, $name );
@@ -1266,39 +1264,20 @@ final class AWI_Rest {
 	}
 
 	private static function build_product_tag_names( array $payload, string $name, array $attributes_payload, array $category_ids, int $product_id ): array {
-		$tags = self::normalize_tag_names( isset( $payload['tags'] ) ? $payload['tags'] : array() );
-		if ( $name !== '' ) {
-			$tags[] = $name;
+		unset( $payload, $attributes_payload, $category_ids, $product_id );
+
+		$title = self::clean_ai_plain_text_output( $name );
+		if ( $title === '' ) {
+			return array();
 		}
 
-		foreach ( $attributes_payload as $attribute ) {
-			if ( ! is_array( $attribute ) ) {
-				continue;
-			}
-
-			if ( ! empty( $attribute['name'] ) ) {
-				$tags[] = (string) $attribute['name'];
-			}
-
-			$options = isset( $attribute['options'] ) && is_array( $attribute['options'] ) ? $attribute['options'] : array();
-			foreach ( $options as $option ) {
-				$tags[] = (string) $option;
-			}
+		$tags  = array( $title );
+		$parts = preg_split( '/\s*[-,|\\/]+\s*/', $title );
+		if ( is_array( $parts ) ) {
+			$tags = array_merge( $tags, $parts );
 		}
 
-		foreach ( $category_ids as $category_id ) {
-			$term = get_term( (int) $category_id, 'product_cat' );
-			if ( $term instanceof WP_Term ) {
-				$tags[] = (string) $term->name;
-			}
-		}
-
-		$existing = wp_get_post_terms( $product_id, 'product_tag', array( 'fields' => 'names' ) );
-		if ( ! is_wp_error( $existing ) && is_array( $existing ) ) {
-			$tags = array_merge( $tags, $existing );
-		}
-
-		return array_slice( self::normalize_tag_names( $tags ), 0, 12 );
+		return array_slice( self::normalize_tag_names( $tags ), 0, 8 );
 	}
 
 	private static function normalize_tag_names( $value ): array {
@@ -1396,15 +1375,43 @@ final class AWI_Rest {
 		return $post_id ? (int) $post_id : 0;
 	}
 
-	private static function generate_unique_sku(): string {
+	private static function generate_unique_sku( array $settings = array() ): string {
+		$prefix        = isset( $settings['sku_prefix'] ) ? trim( (string) $settings['sku_prefix'] ) : 'F';
+		$middle_prefix = isset( $settings['sku_middle_prefix'] ) ? trim( (string) $settings['sku_middle_prefix'] ) : 'G';
+		$suffix        = isset( $settings['sku_suffix'] ) ? trim( (string) $settings['sku_suffix'] ) : 'K';
+		$number_length = isset( $settings['sku_number_length'] ) ? (int) $settings['sku_number_length'] : 3;
+		if ( $number_length < 1 ) {
+			$number_length = 1;
+		}
+		if ( $number_length > 8 ) {
+			$number_length = 8;
+		}
+
 		$candidate = '';
 		$attempts  = 0;
+		$max_value = ( 10 ** $number_length ) - 1;
 		do {
-			$candidate = 'F' . rand( 0, 9 ) . 'G' . str_pad( (string) rand( 0, 999 ), 3, '0', STR_PAD_LEFT ) . 'K';
+			$candidate = $prefix . wp_rand( 0, 9 ) . $middle_prefix . str_pad( (string) wp_rand( 0, $max_value ), $number_length, '0', STR_PAD_LEFT ) . $suffix;
 			$exists    = (int) wc_get_product_id_by_sku( $candidate ) > 0;
 			$attempts++;
 		} while ( $exists && $attempts < 30 );
 		return $candidate;
+	}
+
+	private static function resolve_import_sku( WC_Product $product, string $original_sku, bool $is_update, array $settings ): string {
+		$existing_sku = trim( (string) $product->get_sku() );
+		if ( ! empty( $settings['auto_sku_format'] ) ) {
+			if ( $is_update && $existing_sku !== '' ) {
+				return $existing_sku;
+			}
+			return self::generate_unique_sku( $settings );
+		}
+
+		if ( $is_update ) {
+			return $existing_sku;
+		}
+
+		return $original_sku;
 	}
 
 	private static function cleanup_stale_sku_lookup_entries( string $sku ): void {
@@ -1418,7 +1425,7 @@ final class AWI_Rest {
 			return;
 		}
 
-		$lookup_table = $wpdb->prefix . 'wc_product_meta_lookup';
+		$lookup_table = esc_sql( preg_replace( '/[^A-Za-z0-9_]/', '', $wpdb->prefix . 'wc_product_meta_lookup' ) );
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $lookup_table ) );
 		if ( $table_exists !== $lookup_table ) {
 			return;
@@ -2511,6 +2518,8 @@ final class AWI_Rest {
 
 		return array(
 			'enabled'         => ! empty( $settings['enabled'] ),
+			'rewrite_title'   => ! isset( $settings['rewrite_title'] ) || ! empty( $settings['rewrite_title'] ),
+			'rewrite_description' => ! isset( $settings['rewrite_description'] ) || ! empty( $settings['rewrite_description'] ),
 			'openai_api_key'  => $openai_key,
 			'gemini_api_key'  => $gemini_key,
 			'openai_model'    => self::normalize_model_name( isset( $settings['openai_model'] ) ? (string) $settings['openai_model'] : '', 'gpt-4o' ),
@@ -2518,6 +2527,15 @@ final class AWI_Rest {
 			'provider_order'  => $order,
 			'cta_url'         => isset( $settings['cta_url'] ) ? trim( (string) $settings['cta_url'] ) : '',
 			'keywords'        => isset( $settings['keywords'] ) ? trim( (string) $settings['keywords'] ) : '',
+			'title_prompt_instructions' => isset( $settings['title_prompt_instructions'] ) ? trim( (string) $settings['title_prompt_instructions'] ) : '',
+			'description_prompt_instructions' => isset( $settings['description_prompt_instructions'] ) ? trim( (string) $settings['description_prompt_instructions'] ) : '',
+			'tag_prompt_instructions' => isset( $settings['tag_prompt_instructions'] ) ? trim( (string) $settings['tag_prompt_instructions'] ) : '',
+			'auto_tags'       => ! empty( $settings['auto_tags'] ),
+			'auto_sku_format' => ! empty( $settings['auto_sku_format'] ),
+			'sku_prefix'      => isset( $settings['sku_prefix'] ) ? preg_replace( '/[^A-Z0-9_-]/', '', strtoupper( trim( (string) $settings['sku_prefix'] ) ) ) : 'F',
+			'sku_middle_prefix' => isset( $settings['sku_middle_prefix'] ) ? preg_replace( '/[^A-Z0-9_-]/', '', strtoupper( trim( (string) $settings['sku_middle_prefix'] ) ) ) : 'G',
+			'sku_suffix'      => isset( $settings['sku_suffix'] ) ? preg_replace( '/[^A-Z0-9_-]/', '', strtoupper( trim( (string) $settings['sku_suffix'] ) ) ) : 'K',
+			'sku_number_length' => max( 1, min( 8, (int) ( isset( $settings['sku_number_length'] ) ? $settings['sku_number_length'] : 3 ) ) ),
 		);
 	}
 
@@ -2846,6 +2864,10 @@ final class AWI_Rest {
 	}
 
 	private static function prepare_rewritten_import_copy( array $payload, array $attributes = array(), array $variations = array() ): array {
+		$settings            = self::get_ai_settings();
+		$can_use_ai          = ! empty( $settings['enabled'] ) && ! empty( self::get_ai_provider_sequence( $settings ) );
+		$rewrite_title       = $can_use_ai && ! empty( $settings['rewrite_title'] );
+		$rewrite_description = $can_use_ai && ! empty( $settings['rewrite_description'] );
 		$name               = isset( $payload['name'] ) ? self::mixed_to_clean_text( $payload['name'] ) : '';
 		$detail_context     = self::build_payload_detail_data_context( $payload );
 		$normalized_attrs   = self::merge_rewrite_attributes( $attributes, isset( $detail_context['attributes'] ) && is_array( $detail_context['attributes'] ) ? $detail_context['attributes'] : array() );
@@ -2853,38 +2875,51 @@ final class AWI_Rest {
 		$description        = $description_source;
 		$short              = isset( $payload['short_description'] ) ? self::clean_ai_output( self::mixed_to_clean_text( $payload['short_description'] ) ) : '';
 
-		if ( $description !== '' ) {
+		if ( $rewrite_description && $description !== '' ) {
 			$description = self::rewrite_description_with_ai( $description_source, $name, $normalized_attrs, $variations );
 		}
 
-		$title_short = self::rewrite_title_and_short_with_ai(
-			$name,
-			$short,
-			$description_source !== '' ? $description_source : ( $description !== '' ? $description : $short ),
-			$normalized_attrs,
-			$variations
-		);
+		$rewritten_name  = $name;
+		$rewritten_short = $short;
+		if ( $rewrite_title || $rewrite_description ) {
+			$title_short = self::rewrite_title_and_short_with_ai(
+				$name,
+				$short,
+				$description_source !== '' ? $description_source : ( $description !== '' ? $description : $short ),
+				$normalized_attrs,
+				$variations
+			);
 
-		$rewritten_name = isset( $title_short['name'] ) ? trim( (string) $title_short['name'] ) : '';
-		if ( $rewritten_name === '' ) {
-			$rewritten_name = $name;
+			if ( $rewrite_title ) {
+				$candidate_name = isset( $title_short['name'] ) ? trim( (string) $title_short['name'] ) : '';
+				if ( $candidate_name !== '' ) {
+					$rewritten_name = $candidate_name;
+				}
+			}
+
+			if ( $rewrite_description ) {
+				$candidate_short = isset( $title_short['short_description'] ) ? self::clean_ai_output( (string) $title_short['short_description'] ) : '';
+				if ( $candidate_short !== '' && ! self::short_description_needs_refresh( $candidate_short ) ) {
+					$rewritten_short = $candidate_short;
+				}
+			}
 		}
 
-		$rewritten_short = isset( $title_short['short_description'] ) ? self::clean_ai_output( (string) $title_short['short_description'] ) : '';
-		if ( $rewritten_short === '' || self::short_description_needs_refresh( $rewritten_short ) ) {
-			$rewritten_short = $short;
-		}
-		if ( $rewritten_short === '' || self::short_description_needs_refresh( $rewritten_short ) ) {
-			$rewritten_short = '';
-		}
-		if ( $rewritten_short === '' && $description_source !== '' ) {
-			$rewritten_short = self::derive_short_description_from_html( $description_source );
+		$rewritten_tags = array();
+		if ( $rewrite_title && ! empty( $settings['auto_tags'] ) ) {
+			$rewritten_tags = self::generate_tags_with_ai(
+				$rewritten_name,
+				$description_source !== '' ? $description_source : $description,
+				$normalized_attrs,
+				$variations
+			);
 		}
 
 		return array(
 			'name'              => $rewritten_name,
 			'description'       => $description,
 			'short_description' => $rewritten_short,
+			'tags'              => $rewritten_tags,
 		);
 	}
 
@@ -2941,10 +2976,16 @@ final class AWI_Rest {
 			$keyword_instruction = 'Use these keywords naturally where they fit: ' . $keywords . "\n";
 		}
 
+		$title_prompt_instructions = isset( $settings['title_prompt_instructions'] ) ? trim( (string) $settings['title_prompt_instructions'] ) : '';
+		if ( $title_prompt_instructions !== '' ) {
+			$keyword_instruction .= 'Extra title instructions: ' . $title_prompt_instructions . "\n";
+		}
+
 		$system_prompt =
-			'B2B wholesale product writer. Return JSON: {"title":"...","short_description":"..."}. First char must be {.' . "\n" .
+			'B2B wholesale product writer. Return JSON: {"title":"...","short_description":"...","tags":["..."]}. First char must be {.' . "\n" .
 			'"title": title case, facts only, no hype, no emojis.' . "\n" .
 			'"short_description": one <p> tag, 2-3 sentences: what it is, key spec, who orders wholesale.' . "\n" .
+			'"tags": 3-6 compact product tags based on the title and product facts only. No generic filler.' . "\n" .
 			$keyword_instruction .
 			'No invented specs. No supplier/country/platform names. No text outside JSON.';
 
@@ -2981,10 +3022,12 @@ final class AWI_Rest {
 
 		$title = isset( $decoded['title'] ) ? self::clean_ai_plain_text_output( (string) $decoded['title'] ) : '';
 		$short = isset( $decoded['short_description'] ) ? self::clean_ai_output( (string) $decoded['short_description'] ) : '';
+		$tags  = self::normalize_tag_names( isset( $decoded['tags'] ) ? $decoded['tags'] : array() );
 
 		return array(
 			'name'              => $title !== '' ? $title : $base['name'],
 			'short_description' => $short !== '' ? $short : $base['short_description'],
+			'tags'              => $tags,
 		);
 	}
 
@@ -2996,17 +3039,11 @@ final class AWI_Rest {
 		$settings = self::get_ai_settings();
 
 		if ( strlen( $description ) < 20 ) {
-			return self::append_description_cta_section(
-				self::build_structured_description_fallback( $product_name, $description, $attributes, $variations ),
-				isset( $settings['cta_url'] ) ? (string) $settings['cta_url'] : ''
-			);
+			return $description;
 		}
 
 		if ( empty( $settings['enabled'] ) || empty( self::get_ai_provider_sequence( $settings ) ) ) {
-			return self::append_description_cta_section(
-				self::build_structured_description_fallback( $product_name, $description, $attributes, $variations ),
-				isset( $settings['cta_url'] ) ? (string) $settings['cta_url'] : ''
-			);
+			return $description;
 		}
 
 		$cta_url  = isset( $settings['cta_url'] ) ? trim( (string) $settings['cta_url'] ) : '';
@@ -3018,6 +3055,11 @@ final class AWI_Rest {
 			$keyword_instruction =
 				'REQUIRED KEYWORDS — you MUST weave these naturally into the copy (do not force them awkwardly; fit them where they read naturally):' . "\n" .
 				$keywords . "\n\n";
+		}
+
+		$description_prompt_instructions = isset( $settings['description_prompt_instructions'] ) ? trim( (string) $settings['description_prompt_instructions'] ) : '';
+		if ( $description_prompt_instructions !== '' ) {
+			$keyword_instruction .= 'EXTRA DESCRIPTION INSTRUCTIONS:' . "\n" . $description_prompt_instructions . "\n\n";
 		}
 
 		$system_prompt =
@@ -3093,19 +3135,68 @@ final class AWI_Rest {
 		$out = isset( $result['content'] ) ? (string) $result['content'] : '';
 
 		if ( $out === '' ) {
-			return self::append_description_cta_section(
-				self::build_structured_description_fallback( $product_name, $description, $attributes, $variations ),
-				$cta_url
-			);
+			return $description;
 		}
 
 		$cleaned = self::clean_ai_output( $out );
 
 		if ( self::description_needs_structured_fallback( $cleaned ) ) {
-			$cleaned = self::build_structured_description_fallback( $product_name, $description, $attributes, $variations );
+			return $description;
 		}
 
 		return self::append_description_cta_section( $cleaned, $cta_url );
+	}
+
+	private static function generate_tags_with_ai( string $product_name, string $source_copy, array $attributes = array(), array $variations = array() ): array {
+		$settings = self::get_ai_settings();
+		if ( empty( $settings['enabled'] ) || empty( $settings['auto_tags'] ) || empty( self::get_ai_provider_sequence( $settings ) ) ) {
+			return array();
+		}
+
+		$keywords = isset( $settings['keywords'] ) ? trim( (string) $settings['keywords'] ) : '';
+		$tag_prompt_instructions = isset( $settings['tag_prompt_instructions'] ) ? trim( (string) $settings['tag_prompt_instructions'] ) : '';
+		$instructions = '';
+		if ( $keywords !== '' ) {
+			$instructions .= 'Use these keywords only if they truly match the product: ' . $keywords . "\n";
+		}
+		if ( $tag_prompt_instructions !== '' ) {
+			$instructions .= 'Extra tag instructions: ' . $tag_prompt_instructions . "\n";
+		}
+
+		$user_content  = $product_name !== '' ? "Title:\n{$product_name}\n\n" : '';
+		$user_content .= $source_copy !== '' ? "Product details:\n" . wp_strip_all_tags( $source_copy ) . "\n\n" : '';
+		if ( ! empty( $attributes ) ) {
+			$user_content .= "Attributes:\n" . wp_json_encode( $attributes ) . "\n\n";
+		}
+		if ( ! empty( $variations ) ) {
+			$user_content .= "Variations:\n" . wp_json_encode( $variations ) . "\n";
+		}
+		if ( strlen( $user_content ) > 2000 ) {
+			$user_content = substr( $user_content, 0, 2000 );
+		}
+
+		$result = self::request_ai_completion(
+			$settings,
+			'B2B wholesale product tag writer. Return JSON only: {"tags":["..."]}. Create 3 to 6 precise product tags from the title and provided facts only. No generic tags. No supplier names. ' . $instructions,
+			$user_content,
+			array(
+				'json_mode'   => true,
+				'max_tokens'  => 120,
+				'temperature' => 0.2,
+				'_call_type'  => 'tags',
+			)
+		);
+		$out = isset( $result['content'] ) ? (string) $result['content'] : '';
+		if ( $out === '' ) {
+			return array();
+		}
+
+		$decoded = self::decode_ai_json_object( $out );
+		if ( ! $decoded ) {
+			return array();
+		}
+
+		return array_slice( self::normalize_tag_names( isset( $decoded['tags'] ) ? $decoded['tags'] : array() ), 0, 8 );
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────────

@@ -102,7 +102,7 @@ final class AWI_Admin {
 			return;
 		}
 
-		wp_register_style( 'awi_admin', false );
+		wp_register_style( 'awi_admin', false, array(), AWI_VERSION );
 		wp_enqueue_style( 'awi_admin' );
 		wp_add_inline_style( 'awi_admin', self::get_common_admin_css() );
 
@@ -296,7 +296,27 @@ final class AWI_Admin {
 									<div class="awi-v">
 										<label class="awi-toggle">
 											<input type="checkbox" name="awi_ai_enabled" value="1" <?php checked( $state['ai_enabled'] ); ?>>
-											<span>Rewrite imported title, short description, and long description</span>
+											<span>Allow AI rewrite during import when a valid provider is configured</span>
+										</label>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">Rewrite Title</div>
+									<div class="awi-v">
+										<label class="awi-toggle">
+											<input type="checkbox" name="awi_rewrite_title" value="1" <?php checked( $state['ai_rewrite_title'] ); ?>>
+											<span>Rewrite imported product title with AI</span>
+										</label>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">Rewrite Description</div>
+									<div class="awi-v">
+										<label class="awi-toggle">
+											<input type="checkbox" name="awi_rewrite_description" value="1" <?php checked( $state['ai_rewrite_description'] ); ?>>
+											<span>Rewrite imported short and long descriptions with AI</span>
 										</label>
 									</div>
 								</div>
@@ -350,7 +370,7 @@ final class AWI_Admin {
 											'gpt-3.5-turbo'  => 'gpt-3.5-turbo',
 											'custom'         => '— Custom model ID —',
 										);
-										$cur_openai = esc_attr( $state['ai_openai_model'] );
+										$cur_openai = (string) $state['ai_openai_model'];
 										$is_custom  = ! array_key_exists( $state['ai_openai_model'], $openai_models ) || $state['ai_openai_model'] === 'custom';
 										?>
 										<select name="awi_ai_openai_model_select" id="awi_openai_model_select" onchange="awiModelSelect('openai',this.value)">
@@ -362,9 +382,9 @@ final class AWI_Admin {
 											type="text"
 											name="awi_ai_openai_model"
 											id="awi_openai_model_custom"
-											value="<?php echo $cur_openai; ?>"
+											value="<?php echo esc_attr( $cur_openai ); ?>"
 											placeholder="gpt-4o-mini"
-											style="<?php echo $is_custom ? '' : 'display:none;'; ?>margin-top:6px;"
+											style="<?php echo esc_attr( ( $is_custom ? '' : 'display:none;' ) . 'margin-top:6px;' ); ?>"
 										/>
 										<div class="awi-field-help">Select a model or choose "Custom" to type any model ID.</div>
 									</div>
@@ -407,7 +427,7 @@ final class AWI_Admin {
 											'gemini-1.5-pro'   => 'gemini-1.5-pro',
 											'custom'           => '— Custom model ID —',
 										);
-										$cur_gemini    = esc_attr( $state['ai_gemini_model'] );
+										$cur_gemini    = (string) $state['ai_gemini_model'];
 										$is_gcustom    = ! array_key_exists( $state['ai_gemini_model'], $gemini_models ) || $state['ai_gemini_model'] === 'custom';
 										?>
 										<select name="awi_ai_gemini_model_select" id="awi_gemini_model_select" onchange="awiModelSelect('gemini',this.value)">
@@ -419,9 +439,9 @@ final class AWI_Admin {
 											type="text"
 											name="awi_ai_gemini_model"
 											id="awi_gemini_model_custom"
-											value="<?php echo $cur_gemini; ?>"
+											value="<?php echo esc_attr( $cur_gemini ); ?>"
 											placeholder="gemini-2.5-flash"
-											style="<?php echo $is_gcustom ? '' : 'display:none;'; ?>margin-top:6px;"
+											style="<?php echo esc_attr( ( $is_gcustom ? '' : 'display:none;' ) . 'margin-top:6px;' ); ?>"
 										/>
 										<div class="awi-field-help">Select a model or choose "Custom" to type any model ID.</div>
 									</div>
@@ -459,6 +479,113 @@ final class AWI_Admin {
 											value="<?php echo esc_attr( $state['ai_cta_url'] ); ?>"
 											placeholder="https://yoursite.com/shop"
 										/>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">Title Prompt Instructions</div>
+									<div class="awi-v">
+										<textarea name="awi_title_prompt_instructions" rows="3" placeholder="Extra instructions for AI title output"><?php echo esc_textarea( $state['ai_title_prompt_instructions'] ); ?></textarea>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">Description Prompt Instructions</div>
+									<div class="awi-v">
+										<textarea name="awi_description_prompt_instructions" rows="4" placeholder="Extra instructions for AI description output"><?php echo esc_textarea( $state['ai_description_prompt_instructions'] ); ?></textarea>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">Tag Prompt Instructions</div>
+									<div class="awi-v">
+										<textarea name="awi_tag_prompt_instructions" rows="3" placeholder="Extra instructions for AI tags output"><?php echo esc_textarea( $state['ai_tag_prompt_instructions'] ); ?></textarea>
+										<div class="awi-field-help">Used only when Auto Write Tags is enabled and AI returns tags.</div>
+									</div>
+								</div>
+							</div>
+						</details>
+
+						<details class="awi-accordion">
+							<summary>
+								<div class="awi-accordion-copy">
+									<span class="awi-accordion-title">Import Behavior</span>
+									<span class="awi-accordion-meta">Control automatic tags and generated SKU format.</span>
+								</div>
+							</summary>
+							<div class="awi-accordion-body">
+								<div class="awi-kv">
+									<div class="awi-k">Auto Write Tags</div>
+									<div class="awi-v">
+										<label class="awi-toggle">
+											<input type="checkbox" name="awi_auto_tags" value="1" <?php checked( $state['ai_auto_tags'] ); ?>>
+											<span>Write product tags automatically during import</span>
+										</label>
+										<div class="awi-field-help">When disabled, the importer leaves product tags untouched.</div>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">Auto SKU Format</div>
+									<div class="awi-v">
+										<label class="awi-toggle">
+											<input type="checkbox" name="awi_auto_sku_format" value="1" <?php checked( $state['ai_auto_sku_format'] ); ?>>
+											<span>Generate formatted SKU automatically for imported products</span>
+										</label>
+										<div class="awi-field-help">When disabled, imported SKU stays manual. Existing SKU is preserved and new products keep the incoming SKU if provided.</div>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">SKU Prefix</div>
+									<div class="awi-v">
+										<input
+											type="text"
+											name="awi_sku_prefix"
+											value="<?php echo esc_attr( $state['ai_sku_prefix'] ); ?>"
+											placeholder="F"
+											maxlength="8"
+										/>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">SKU Middle</div>
+									<div class="awi-v">
+										<input
+											type="text"
+											name="awi_sku_middle_prefix"
+											value="<?php echo esc_attr( $state['ai_sku_middle_prefix'] ); ?>"
+											placeholder="G"
+											maxlength="8"
+										/>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">SKU Suffix</div>
+									<div class="awi-v">
+										<input
+											type="text"
+											name="awi_sku_suffix"
+											value="<?php echo esc_attr( $state['ai_sku_suffix'] ); ?>"
+											placeholder="K"
+											maxlength="8"
+										/>
+									</div>
+								</div>
+
+								<div class="awi-kv">
+									<div class="awi-k">SKU Number Length</div>
+									<div class="awi-v">
+										<input
+											type="number"
+											name="awi_sku_number_length"
+											value="<?php echo esc_attr( (string) $state['ai_sku_number_length'] ); ?>"
+											min="1"
+											max="8"
+										/>
+										<div class="awi-field-help">Example format: <?php echo esc_html( $state['ai_sku_prefix'] . '0' . $state['ai_sku_middle_prefix'] . str_repeat( '0', max( 1, (int) $state['ai_sku_number_length'] ) ) . $state['ai_sku_suffix'] ); ?></div>
 									</div>
 								</div>
 							</div>
@@ -645,7 +772,10 @@ final class AWI_Admin {
 							<?php if ( $q_is_pro ) : ?>
 								<?php esc_html_e( 'Pro plan — unlimited imports, no cooldown.', 'atw-alibaba-product-importer' ); ?>
 							<?php else : ?>
-								<?php printf( esc_html__( 'Free plan: %d imports per hour. Limit reached triggers an 8-hour cooldown.', 'atw-alibaba-product-importer' ), (int) $q_limit ); ?>
+								<?php
+								/* translators: %d: number of free imports allowed per hour. */
+								printf( esc_html__( 'Free plan: %d imports per hour. Limit reached triggers an 8-hour cooldown.', 'atw-alibaba-product-importer' ), (int) $q_limit );
+								?>
 							<?php endif; ?>
 						</p>
 					</div>
@@ -961,29 +1091,29 @@ final class AWI_Admin {
 		return current_user_can( $cap );
 	}
 
-	private static function build_ai_settings_from_post( array $current ): array {
-		$new_openai_key = isset( $_POST['awi_ai_openai_api_key'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_ai_openai_api_key'] ) ) : '';
+	private static function build_ai_settings_from_post( array $current, array $post ): array {
+		$new_openai_key = isset( $post['awi_ai_openai_api_key'] ) ? sanitize_text_field( (string) $post['awi_ai_openai_api_key'] ) : '';
 		if ( $new_openai_key !== '' ) {
 			$current['openai_api_key'] = $new_openai_key;
 			$current['api_key']        = $new_openai_key;
 		}
 
-		$new_gemini_key = isset( $_POST['awi_ai_gemini_api_key'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_ai_gemini_api_key'] ) ) : '';
+		$new_gemini_key = isset( $post['awi_ai_gemini_api_key'] ) ? sanitize_text_field( (string) $post['awi_ai_gemini_api_key'] ) : '';
 		if ( $new_gemini_key !== '' ) {
 			$current['gemini_api_key'] = $new_gemini_key;
 		}
 
 		// Text field holds the real model ID (JS updates it when preset selected, user types when custom).
-		$openai_model = isset( $_POST['awi_ai_openai_model'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_ai_openai_model'] ) ) : '';
+		$openai_model = isset( $post['awi_ai_openai_model'] ) ? sanitize_text_field( (string) $post['awi_ai_openai_model'] ) : '';
 		if ( $openai_model === '' || $openai_model === 'custom' ) {
-			$openai_model = isset( $_POST['awi_ai_openai_model_select'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_ai_openai_model_select'] ) ) : '';
+			$openai_model = isset( $post['awi_ai_openai_model_select'] ) ? sanitize_text_field( (string) $post['awi_ai_openai_model_select'] ) : '';
 		}
 		if ( $openai_model === '' || $openai_model === 'custom' ) {
 			$openai_model = 'gpt-4o-mini';
 		}
-		$gemini_model = isset( $_POST['awi_ai_gemini_model'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_ai_gemini_model'] ) ) : '';
+		$gemini_model = isset( $post['awi_ai_gemini_model'] ) ? sanitize_text_field( (string) $post['awi_ai_gemini_model'] ) : '';
 		if ( $gemini_model === '' || $gemini_model === 'custom' ) {
-			$gemini_model = isset( $_POST['awi_ai_gemini_model_select'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_ai_gemini_model_select'] ) ) : '';
+			$gemini_model = isset( $post['awi_ai_gemini_model_select'] ) ? sanitize_text_field( (string) $post['awi_ai_gemini_model_select'] ) : '';
 		}
 		if ( $gemini_model === '' || $gemini_model === 'custom' ) {
 			$gemini_model = 'gemini-2.5-flash';
@@ -991,39 +1121,71 @@ final class AWI_Admin {
 		$current['openai_model'] = $openai_model;
 		$current['gemini_model'] = $gemini_model;
 
-		$provider_order = isset( $_POST['awi_ai_provider_order'] ) ? sanitize_key( (string) wp_unslash( $_POST['awi_ai_provider_order'] ) ) : 'openai_first';
+		$provider_order = isset( $post['awi_ai_provider_order'] ) ? sanitize_key( (string) $post['awi_ai_provider_order'] ) : 'openai_first';
 		if ( ! in_array( $provider_order, array( 'openai_first', 'gemini_first' ), true ) ) {
 			$provider_order = 'openai_first';
 		}
 
-		$current['enabled']        = ! empty( $_POST['awi_ai_enabled'] );
-		$current['cta_url']        = isset( $_POST['awi_cta_url'] ) ? esc_url_raw( (string) wp_unslash( $_POST['awi_cta_url'] ) ) : '';
-		$current['keywords']       = isset( $_POST['awi_keywords'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['awi_keywords'] ) ) : '';
+		$current['enabled']        = ! empty( $post['awi_ai_enabled'] );
+		$current['rewrite_title']  = ! empty( $post['awi_rewrite_title'] );
+		$current['rewrite_description'] = ! empty( $post['awi_rewrite_description'] );
+		$current['cta_url']        = isset( $post['awi_cta_url'] ) ? esc_url_raw( (string) $post['awi_cta_url'] ) : '';
+		$current['keywords']       = isset( $post['awi_keywords'] ) ? sanitize_text_field( (string) $post['awi_keywords'] ) : '';
+		$current['title_prompt_instructions'] = isset( $post['awi_title_prompt_instructions'] ) ? sanitize_textarea_field( (string) $post['awi_title_prompt_instructions'] ) : '';
+		$current['description_prompt_instructions'] = isset( $post['awi_description_prompt_instructions'] ) ? sanitize_textarea_field( (string) $post['awi_description_prompt_instructions'] ) : '';
+		$current['tag_prompt_instructions'] = isset( $post['awi_tag_prompt_instructions'] ) ? sanitize_textarea_field( (string) $post['awi_tag_prompt_instructions'] ) : '';
 		$current['provider_order'] = $provider_order;
+		$current['auto_tags']      = ! empty( $post['awi_auto_tags'] );
+		$current['auto_sku_format'] = ! empty( $post['awi_auto_sku_format'] );
+		$current['sku_prefix']      = self::sanitize_sku_format_part( isset( $post['awi_sku_prefix'] ) ? (string) $post['awi_sku_prefix'] : 'F', 'F' );
+		$current['sku_middle_prefix'] = self::sanitize_sku_format_part( isset( $post['awi_sku_middle_prefix'] ) ? (string) $post['awi_sku_middle_prefix'] : 'G', 'G' );
+		$current['sku_suffix']        = self::sanitize_sku_format_part( isset( $post['awi_sku_suffix'] ) ? (string) $post['awi_sku_suffix'] : 'K', 'K' );
+		$current['sku_number_length'] = self::sanitize_sku_number_length( isset( $post['awi_sku_number_length'] ) ? $post['awi_sku_number_length'] : 3 );
 
 		return $current;
+	}
+
+	private static function sanitize_sku_format_part( string $value, string $fallback ): string {
+		$value = strtoupper( trim( $value ) );
+		$value = preg_replace( '/[^A-Z0-9_-]/', '', $value );
+		if ( ! is_string( $value ) || $value === '' ) {
+			return $fallback;
+		}
+		return substr( $value, 0, 8 );
+	}
+
+	private static function sanitize_sku_number_length( $value ): int {
+		$length = (int) $value;
+		if ( $length < 1 ) {
+			$length = 1;
+		}
+		if ( $length > 8 ) {
+			$length = 8;
+		}
+		return $length;
 	}
 
 	private static function handle_settings_postback(): array {
 		$ai_notice = '';
 		$ai_error  = '';
 		$ai_settings = get_option( 'awi_ai_settings', array() );
+		$post = wp_unslash( $_POST );
 		if ( ! is_array( $ai_settings ) ) {
 			$ai_settings = array();
 		}
 
-		if ( isset( $_POST['awi_save_ai_settings'] ) || isset( $_POST['awi_test_openai_api'] ) || isset( $_POST['awi_test_gemini_api'] ) ) {
+		if ( isset( $post['awi_save_ai_settings'] ) || isset( $post['awi_test_openai_api'] ) || isset( $post['awi_test_gemini_api'] ) ) {
 			check_admin_referer( 'awi_save_ai_settings_action', 'awi_save_ai_settings_nonce' );
 
-			$ai_settings = self::build_ai_settings_from_post( $ai_settings );
+			$ai_settings = self::build_ai_settings_from_post( $ai_settings, $post );
 
-			if ( isset( $_POST['awi_save_ai_settings'] ) ) {
+			if ( isset( $post['awi_save_ai_settings'] ) ) {
 				update_option( 'awi_ai_settings', $ai_settings );
 				$ai_notice = 'AI settings saved.';
 			}
 
-			if ( isset( $_POST['awi_test_openai_api'] ) || isset( $_POST['awi_test_gemini_api'] ) ) {
-				$provider    = isset( $_POST['awi_test_gemini_api'] ) ? 'gemini' : 'openai';
+			if ( isset( $post['awi_test_openai_api'] ) || isset( $post['awi_test_gemini_api'] ) ) {
+				$provider    = isset( $post['awi_test_gemini_api'] ) ? 'gemini' : 'openai';
 				$test_result = AWI_Rest::test_ai_provider_connection( $ai_settings, $provider );
 				if ( ! empty( $test_result['ok'] ) ) {
 					$ai_notice = isset( $test_result['message'] ) ? (string) $test_result['message'] : ucfirst( $provider ) . ' connection succeeded.';
@@ -1034,22 +1196,33 @@ final class AWI_Admin {
 		}
 
 		$ai_enabled            = ! isset( $ai_settings['enabled'] ) ? true : ! empty( $ai_settings['enabled'] );
+		$ai_rewrite_title      = ! isset( $ai_settings['rewrite_title'] ) ? true : ! empty( $ai_settings['rewrite_title'] );
+		$ai_rewrite_description = ! isset( $ai_settings['rewrite_description'] ) ? true : ! empty( $ai_settings['rewrite_description'] );
 		$ai_openai_key_saved   = ! empty( $ai_settings['openai_api_key'] ) || ! empty( $ai_settings['api_key'] );
 		$ai_gemini_key_saved   = ! empty( $ai_settings['gemini_api_key'] );
 		$ai_cta_url            = isset( $ai_settings['cta_url'] ) ? (string) $ai_settings['cta_url'] : '';
 		$ai_keywords           = isset( $ai_settings['keywords'] ) ? (string) $ai_settings['keywords'] : '';
+		$ai_title_prompt_instructions = isset( $ai_settings['title_prompt_instructions'] ) ? (string) $ai_settings['title_prompt_instructions'] : '';
+		$ai_description_prompt_instructions = isset( $ai_settings['description_prompt_instructions'] ) ? (string) $ai_settings['description_prompt_instructions'] : '';
+		$ai_tag_prompt_instructions = isset( $ai_settings['tag_prompt_instructions'] ) ? (string) $ai_settings['tag_prompt_instructions'] : '';
 		$ai_provider_order     = isset( $ai_settings['provider_order'] ) && in_array( $ai_settings['provider_order'], array( 'openai_first', 'gemini_first' ), true ) ? (string) $ai_settings['provider_order'] : 'openai_first';
 		$ai_openai_model       = isset( $ai_settings['openai_model'] ) && is_string( $ai_settings['openai_model'] ) && $ai_settings['openai_model'] !== '' ? (string) $ai_settings['openai_model'] : 'gpt-4o';
 		$ai_gemini_model       = isset( $ai_settings['gemini_model'] ) && is_string( $ai_settings['gemini_model'] ) && $ai_settings['gemini_model'] !== '' ? (string) $ai_settings['gemini_model'] : 'gemini-2.5-flash';
+		$ai_auto_tags          = ! empty( $ai_settings['auto_tags'] );
+		$ai_auto_sku_format    = ! empty( $ai_settings['auto_sku_format'] );
+		$ai_sku_prefix         = self::sanitize_sku_format_part( isset( $ai_settings['sku_prefix'] ) ? (string) $ai_settings['sku_prefix'] : 'F', 'F' );
+		$ai_sku_middle_prefix  = self::sanitize_sku_format_part( isset( $ai_settings['sku_middle_prefix'] ) ? (string) $ai_settings['sku_middle_prefix'] : 'G', 'G' );
+		$ai_sku_suffix         = self::sanitize_sku_format_part( isset( $ai_settings['sku_suffix'] ) ? (string) $ai_settings['sku_suffix'] : 'K', 'K' );
+		$ai_sku_number_length  = self::sanitize_sku_number_length( isset( $ai_settings['sku_number_length'] ) ? $ai_settings['sku_number_length'] : 3 );
 
 		$app_password_created = null;
 		$app_password_error   = '';
 		$app_password_notice  = '';
 
-		if ( isset( $_POST['atw_revoke_app_password'] ) ) {
+		if ( isset( $post['atw_revoke_app_password'] ) ) {
 			check_admin_referer( 'atw_revoke_app_password_action', 'atw_revoke_app_password_nonce' );
 
-			$uuid = isset( $_POST['atw_app_password_uuid'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['atw_app_password_uuid'] ) ) : '';
+			$uuid = isset( $post['atw_app_password_uuid'] ) ? sanitize_text_field( (string) $post['atw_app_password_uuid'] ) : '';
 			if ( $uuid === '' ) {
 				$app_password_error = 'Missing application password id.';
 			} elseif ( ! class_exists( 'WP_Application_Passwords' ) ) {
@@ -1064,10 +1237,10 @@ final class AWI_Admin {
 			}
 		}
 
-		if ( isset( $_POST['atw_create_app_password'] ) ) {
+		if ( isset( $post['atw_create_app_password'] ) ) {
 			check_admin_referer( 'atw_create_app_password_action', 'atw_create_app_password_nonce' );
 
-			$name = isset( $_POST['atw_app_password_name'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['atw_app_password_name'] ) ) : '';
+			$name = isset( $post['atw_app_password_name'] ) ? sanitize_text_field( (string) $post['atw_app_password_name'] ) : '';
 			if ( $name === '' ) {
 				$app_password_error = 'Please enter an application name.';
 			} elseif ( ! class_exists( 'WP_Application_Passwords' ) ) {
@@ -1102,6 +1275,8 @@ final class AWI_Admin {
 			'ai_notice'           => $ai_notice,
 			'ai_error'            => $ai_error,
 			'ai_enabled'          => $ai_enabled,
+			'ai_rewrite_title'    => $ai_rewrite_title,
+			'ai_rewrite_description' => $ai_rewrite_description,
 			'ai_openai_key_saved' => $ai_openai_key_saved,
 			'ai_gemini_key_saved' => $ai_gemini_key_saved,
 			'ai_provider_order'   => $ai_provider_order,
@@ -1109,6 +1284,15 @@ final class AWI_Admin {
 			'ai_gemini_model'     => $ai_gemini_model,
 			'ai_cta_url'          => $ai_cta_url,
 			'ai_keywords'         => $ai_keywords,
+			'ai_title_prompt_instructions' => $ai_title_prompt_instructions,
+			'ai_description_prompt_instructions' => $ai_description_prompt_instructions,
+			'ai_tag_prompt_instructions' => $ai_tag_prompt_instructions,
+			'ai_auto_tags'        => $ai_auto_tags,
+			'ai_auto_sku_format'  => $ai_auto_sku_format,
+			'ai_sku_prefix'       => $ai_sku_prefix,
+			'ai_sku_middle_prefix'=> $ai_sku_middle_prefix,
+			'ai_sku_suffix'       => $ai_sku_suffix,
+			'ai_sku_number_length'=> $ai_sku_number_length,
 			'app_password_created'=> $app_password_created,
 			'app_password_error'  => $app_password_error,
 			'app_password_notice' => $app_password_notice,
@@ -1263,7 +1447,7 @@ final class AWI_Admin {
 		self::assert_access();
 
 		global $wpdb;
-		$table = $wpdb->prefix . 'awi_usage_log';
+		$table = esc_sql( preg_replace( '/[^A-Za-z0-9_]/', '', $wpdb->prefix . 'awi_usage_log' ) );
 
 		if ( isset( $_POST['awi_clear_usage'] ) && check_admin_referer( 'awi_clear_usage_action', 'awi_clear_usage_nonce' ) ) {
 			// $table is derived solely from $wpdb->prefix (not user input) so interpolation is safe.

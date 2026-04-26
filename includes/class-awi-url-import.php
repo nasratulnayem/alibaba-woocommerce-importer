@@ -222,9 +222,10 @@ final class AWI_Url_Import {
 	public static function ajax_create_run(): void {
 		self::assert_ajax_permission();
 
-		$urls_input     = isset( $_POST['urls'] ) ? wp_unslash( $_POST['urls'] ) : array();
-		$category_id    = isset( $_POST['category_id'] ) ? (int) $_POST['category_id'] : 0;
-		$source_run_id  = isset( $_POST['source_run_id'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['source_run_id'] ) ) : '';
+		$post           = wp_unslash( $_POST );
+		$urls_input     = isset( $post['urls'] ) ? $post['urls'] : array();
+		$category_id    = isset( $post['category_id'] ) ? (int) $post['category_id'] : 0;
+		$source_run_id  = isset( $post['source_run_id'] ) ? sanitize_text_field( (string) $post['source_run_id'] ) : '';
 		$raw_urls       = is_array( $urls_input ) ? $urls_input : preg_split( '/[\r\n,]+/', (string) $urls_input );
 		$run            = self::create_run( is_array( $raw_urls ) ? $raw_urls : array(), $category_id, $source_run_id );
 
@@ -238,8 +239,9 @@ final class AWI_Url_Import {
 	public static function ajax_update_run(): void {
 		self::assert_ajax_permission();
 
-		$run_id    = isset( $_POST['run_id'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['run_id'] ) ) : '';
-		$event_raw = isset( $_POST['event'] ) ? (string) wp_unslash( $_POST['event'] ) : '';
+		$post      = wp_unslash( $_POST );
+		$run_id    = isset( $post['run_id'] ) ? sanitize_text_field( (string) $post['run_id'] ) : '';
+		$event_raw = isset( $post['event'] ) ? (string) $post['event'] : '';
 		$event     = json_decode( $event_raw, true );
 		if ( ! is_array( $event ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid event payload.' ), 400 );
@@ -296,7 +298,8 @@ final class AWI_Url_Import {
 		}
 
 		$run_id = isset( $_GET['run_id'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['run_id'] ) ) : '';
-		if ( ! wp_verify_nonce( isset( $_GET['_wpnonce'] ) ? (string) wp_unslash( $_GET['_wpnonce'] ) : '', 'awi_url_import_failed_log_' . $run_id ) ) {
+		$nonce  = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'awi_url_import_failed_log_' . $run_id ) ) {
 			wp_die( esc_html__( 'Invalid log link.', 'atw-alibaba-product-importer' ) );
 		}
 
@@ -319,10 +322,21 @@ final class AWI_Url_Import {
 			wp_die( esc_html__( 'Failed log is not available.', 'atw-alibaba-product-importer' ) );
 		}
 
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		WP_Filesystem();
+		global $wp_filesystem;
+		$log_contents = '';
+		if ( isset( $wp_filesystem ) && is_object( $wp_filesystem ) ) {
+			$log_contents = (string) $wp_filesystem->get_contents( $log_path );
+		}
+		if ( $log_contents === '' && filesize( $log_path ) > 0 ) {
+			wp_die( esc_html__( 'Failed log is not available.', 'atw-alibaba-product-importer' ) );
+		}
+
 		nocache_headers();
 		header( 'Content-Type: text/plain; charset=' . get_option( 'blog_charset', 'UTF-8' ) );
 		header( 'Content-Disposition: inline; filename="failed-log.txt"' );
-		readfile( $log_path );
+		echo esc_html( $log_contents );
 		exit;
 	}
 
@@ -592,14 +606,14 @@ final class AWI_Url_Import {
 			if ( ! is_string( $file ) || $file === '' || ! file_exists( $file ) ) {
 				continue;
 			}
-			if ( ! @unlink( $file ) ) {
+			if ( ! wp_delete_file( $file ) ) {
 				return new WP_Error( 'awi_url_import_clear_failed', 'Could not clear one or more import history files.' );
 			}
 			$cleared++;
 		}
 
 		$latest_log = self::get_latest_failed_log_path();
-		if ( $latest_log !== '' && file_exists( $latest_log ) && ! @unlink( $latest_log ) ) {
+		if ( $latest_log !== '' && file_exists( $latest_log ) && ! wp_delete_file( $latest_log ) ) {
 			return new WP_Error( 'awi_url_import_clear_failed', 'Could not clear the latest failed log.' );
 		}
 

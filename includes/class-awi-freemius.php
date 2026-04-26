@@ -78,7 +78,7 @@ function atw_fs_is_pro(): bool {
 function atw_fs_uninstall_cleanup(): void {
 	global $wpdb;
 
-	$table = $wpdb->prefix . 'awi_usage_log';
+	$table = esc_sql( preg_replace( '/[^A-Za-z0-9_]/', '', $wpdb->prefix . 'awi_usage_log' ) );
 	$wpdb->query( "DROP TABLE IF EXISTS `{$table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 	delete_option( 'awi_ai_settings' );
@@ -101,6 +101,9 @@ function atw_fs_rmdir( string $dir ): void {
 	if ( ! is_dir( $dir ) ) {
 		return;
 	}
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	WP_Filesystem();
+	global $wp_filesystem;
 	$items = scandir( $dir );
 	if ( ! is_array( $items ) ) {
 		return;
@@ -113,8 +116,10 @@ function atw_fs_rmdir( string $dir ): void {
 		if ( is_dir( $path ) ) {
 			atw_fs_rmdir( $path );
 		} else {
-			@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+			wp_delete_file( $path );
 		}
 	}
-	@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+	if ( isset( $wp_filesystem ) && is_object( $wp_filesystem ) ) {
+		$wp_filesystem->rmdir( $dir, true );
+	}
 }

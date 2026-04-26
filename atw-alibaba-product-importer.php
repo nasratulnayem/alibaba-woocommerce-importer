@@ -44,8 +44,6 @@ final class AWI_Plugin {
 	}
 
 	public static function plugins_loaded(): void {
-		load_plugin_textdomain( 'atw-alibaba-product-importer', false, dirname( plugin_basename( AWI_PLUGIN_FILE ) ) . '/languages' );
-
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			add_action( 'admin_notices', function () {
 				echo '<div class="notice notice-error"><p>' . esc_html__( 'ATW — Alibaba Product Importer requires WooCommerce to be installed and active.', 'atw-alibaba-product-importer' ) . '</p></div>';
