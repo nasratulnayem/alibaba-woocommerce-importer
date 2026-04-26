@@ -7,6 +7,7 @@
  * Author URI: https://codex.nayem.dev
  * Requires at least: 6.0
  * Requires PHP: 7.4
+ * Requires Plugins: woocommerce
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: awi
@@ -45,6 +46,13 @@ final class AWI_Plugin {
 	public static function plugins_loaded(): void {
 		load_plugin_textdomain( 'awi', false, dirname( plugin_basename( AWI_PLUGIN_FILE ) ) . '/languages' );
 
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			add_action( 'admin_notices', function () {
+				echo '<div class="notice notice-error"><p>' . esc_html__( 'Alibaba to WooCommerce Import requires WooCommerce to be installed and active.', 'awi' ) . '</p></div>';
+			} );
+			return;
+		}
+
 		if ( is_admin() ) {
 			AWI_Admin::init();
 			AWI_Url_Import::init();
@@ -56,3 +64,9 @@ final class AWI_Plugin {
 }
 
 AWI_Plugin::init();
+
+add_action( 'before_woocommerce_init', function () {
+	if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+		\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', AWI_PLUGIN_FILE, true );
+	}
+} );
