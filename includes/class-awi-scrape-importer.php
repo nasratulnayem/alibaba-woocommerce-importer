@@ -175,7 +175,12 @@ final class AWI_Scrape_Importer {
 		$max_products = min( 500, $max_products );
 
 		$tmp_name = (string) $_FILES['awi_capture_file']['tmp_name'];
-		$body     = file_get_contents( $tmp_name );
+		global $wp_filesystem;
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+		$body = $wp_filesystem->get_contents( $tmp_name );
 		if ( ! is_string( $body ) || $body === '' ) {
 			return array(
 				'imported' => 0,

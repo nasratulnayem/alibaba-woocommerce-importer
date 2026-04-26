@@ -71,8 +71,8 @@ final class AWI_Admin {
 
 		self::$url_import_hook_suffix = (string) add_submenu_page(
 			'atw',
-			'Url Import',
-			'URL IMPORT',
+			__( 'URL Import', 'awi' ),
+			__( 'URL Import', 'awi' ),
 			$cap,
 			'atw-url-import',
 			array( __CLASS__, 'render_url_import_page' )
@@ -80,8 +80,8 @@ final class AWI_Admin {
 
 		self::$legacy_hook_suffix = (string) add_submenu_page(
 			null,
-			'Alibaba Import',
-			'Alibaba Import',
+			__( 'Alibaba Import', 'awi' ),
+			__( 'Alibaba Import', 'awi' ),
 			$cap,
 			'awi-alibaba-import',
 			array( __CLASS__, 'render_legacy_redirect' )
@@ -168,14 +168,15 @@ final class AWI_Admin {
 			if ( isset( $_POST['awi_create_apppass'] ) && check_admin_referer( 'awi_apppass_action', 'awi_apppass_nonce' ) ) {
 				$pw_name = isset( $_POST['awi_apppass_name'] ) ? sanitize_text_field( wp_unslash( $_POST['awi_apppass_name'] ) ) : '';
 				if ( $pw_name === '' ) {
-					$apppass_error = 'Please enter a name for the Application Password.';
+					$apppass_error = __( 'Please enter a name for the Application Password.', 'awi' );
 				} else {
 					$result = WP_Application_Passwords::create_new_application_password( $current_user->ID, array( 'name' => $pw_name ) );
 					if ( is_wp_error( $result ) ) {
 						$apppass_error = $result->get_error_message();
 					} else {
 						$apppass_new_plain = $result[0];
-						$apppass_notice    = 'Application Password created for "' . esc_html( $pw_name ) . '".';
+						/* translators: %s: Application Password name */
+						$apppass_notice = sprintf( __( 'Application Password created for "%s".', 'awi' ), esc_html( $pw_name ) );
 					}
 				}
 			}
@@ -183,12 +184,12 @@ final class AWI_Admin {
 				$uuid = sanitize_text_field( wp_unslash( $_POST['awi_revoke_uuid'] ?? '' ) );
 				if ( $uuid !== '' ) {
 					$del = WP_Application_Passwords::delete_application_password( $current_user->ID, $uuid );
-					$apppass_notice = is_wp_error( $del ) ? $del->get_error_message() : 'Application Password revoked.';
+					$apppass_notice = is_wp_error( $del ) ? $del->get_error_message() : __( 'Application Password revoked.', 'awi' );
 				}
 			}
 			if ( isset( $_POST['awi_revoke_all_apppass'] ) && check_admin_referer( 'awi_apppass_action', 'awi_apppass_nonce' ) ) {
 				WP_Application_Passwords::delete_all_application_passwords( $current_user->ID );
-				$apppass_notice = 'All Application Passwords revoked.';
+				$apppass_notice = __( 'All Application Passwords revoked.', 'awi' );
 			}
 		}
 
@@ -266,19 +267,19 @@ final class AWI_Admin {
 						<div class="awi-ai-summary">
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Rewrite</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_enabled'] ? 'Enabled' : 'Disabled'; ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_enabled'] ? esc_html__( 'Enabled', 'awi' ) : esc_html__( 'Disabled', 'awi' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Provider</span>
-								<strong class="awi-ai-summary-value"><?php echo 'gemini_first' === $state['ai_provider_order'] ? 'Gemini → OpenAI' : 'OpenAI → Gemini'; ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo 'gemini_first' === $state['ai_provider_order'] ? esc_html__( 'Gemini → OpenAI', 'awi' ) : esc_html__( 'OpenAI → Gemini', 'awi' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">OpenAI</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_openai_key_saved'] ? 'Ready' : 'Not Set'; ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_openai_key_saved'] ? esc_html__( 'Ready', 'awi' ) : esc_html__( 'Not Set', 'awi' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Gemini</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_gemini_key_saved'] ? 'Ready' : 'Not Set'; ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_gemini_key_saved'] ? esc_html__( 'Ready', 'awi' ) : esc_html__( 'Not Set', 'awi' ); ?></strong>
 							</div>
 						</div>
 
@@ -1270,6 +1271,7 @@ final class AWI_Admin {
 			$wpdb->query( "TRUNCATE TABLE `{$table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$model_totals = $wpdb->get_results(
 			"SELECT model, provider,
 				SUM(input_tokens)  AS total_input,
@@ -1304,6 +1306,7 @@ final class AWI_Admin {
 			LIMIT 200",
 			ARRAY_A
 		) ?: array();
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$fmt_cost = static function ( $usd ): string {
 			$usd = (float) $usd;

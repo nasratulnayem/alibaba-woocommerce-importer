@@ -43,6 +43,8 @@ final class AWI_Plugin {
 	}
 
 	public static function plugins_loaded(): void {
+		load_plugin_textdomain( 'awi', false, dirname( plugin_basename( AWI_PLUGIN_FILE ) ) . '/languages' );
+
 		if ( is_admin() ) {
 			AWI_Admin::init();
 			AWI_Url_Import::init();

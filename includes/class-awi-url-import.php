@@ -486,7 +486,12 @@ final class AWI_Url_Import {
 			return;
 		}
 
-		file_put_contents( $path, wp_json_encode( $run, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ), LOCK_EX );
+		global $wp_filesystem;
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+		$wp_filesystem->put_contents( $path, wp_json_encode( $run, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ), FS_CHMOD_FILE );
 	}
 
 	private static function write_failed_log( array $run ): void {
@@ -527,8 +532,13 @@ final class AWI_Url_Import {
 		}
 
 		$content = implode( "\n", $lines ) . "\n";
-		file_put_contents( $log_path, $content, LOCK_EX );
-		file_put_contents( self::get_latest_failed_log_path(), $content, LOCK_EX );
+		global $wp_filesystem;
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+		$wp_filesystem->put_contents( $log_path, $content, FS_CHMOD_FILE );
+		$wp_filesystem->put_contents( self::get_latest_failed_log_path(), $content, FS_CHMOD_FILE );
 	}
 
 	private static function load_run( string $run_id ): array {
@@ -540,7 +550,12 @@ final class AWI_Url_Import {
 	}
 
 	private static function load_run_from_path( string $path ): array {
-		$json = file_get_contents( $path );
+		global $wp_filesystem;
+		if ( empty( $wp_filesystem ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+		$json = $wp_filesystem->get_contents( $path );
 		if ( ! is_string( $json ) || $json === '' ) {
 			return array();
 		}
