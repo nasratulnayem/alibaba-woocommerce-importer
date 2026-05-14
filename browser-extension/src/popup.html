@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Importon Bridge Extension</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="hdr">
+      <div class="brand">
+        <img src="import.png" alt="Importer" class="logo-icon" />
+        <div>
+          <div class="logo">Importon Bridge Extension</div>
+          <div class="sub">WooCommerce</div>
+        </div>
+      </div>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle theme">Dark</button>
+    </header>
+
+    <main class="wrap">
+      <section class="card">
+        <button id="configToggle" class="card-toggle" type="button" aria-expanded="true">Configuration</button>
+        <div id="configBody">
+          <div class="row">
+            <label class="lbl" for="wpBaseUrl">Site URL</label>
+            <input id="wpBaseUrl" class="inp" type="text" placeholder="https://example.com" />
+          </div>
+          <div class="grid2">
+            <div class="row">
+              <label class="lbl" for="wpUser">Username</label>
+              <input id="wpUser" class="inp" type="text" placeholder="admin" />
+            </div>
+            <div class="row">
+              <label class="lbl" for="wpAppPassword">App Password</label>
+              <input id="wpAppPassword" class="inp" type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" />
+            </div>
+          </div>
+
+          <div class="btns">
+            <button id="saveBtn" class="btn">Save</button>
+            <button id="testBtn" class="btn btn-ghost">Test</button>
+          </div>
+          <div id="status" class="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="title">Map Category</div>
+        <div class="row">
+          <label class="lbl" for="defaultCategoryId">Default category</label>
+          <div class="select-wrap">
+            <select id="defaultCategoryId" class="inp inp-select">
+              <option value="">Select category...</option>
+            </select>
+          </div>
+        </div>
+        <div class="opts">
+          <label class="chk chk-pill"><input id="askCategoryBeforeImport" type="checkbox" checked /> Ask category before import</label>
+        </div>
+        <div id="catStatus" class="status" aria-live="polite"></div>
+      </section>
+
+      <footer class="ftr">
+        <a class="lnk" id="openOptions" href="#">Advanced options</a>
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

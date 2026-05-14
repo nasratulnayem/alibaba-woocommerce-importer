@@ -262,7 +262,7 @@
       const requestId = `awi_bridge_${Date.now()}_${++state.requestSeq}`;
       const timer = window.setTimeout(() => {
         state.bridgeRequests.delete(requestId);
-        reject(new Error("ATW extension did not respond. Make sure it is installed, enabled, and allowed on this site."));
+        reject(new Error("Importon Bridge extension did not respond. Make sure it is installed, enabled, and allowed on this site."));
       }, timeoutMs);
 
       state.bridgeRequests.set(requestId, { resolve, reject, timer });
@@ -291,7 +291,7 @@
       if (isInvalidatedBridgeError(data?.error)) {
         state.bridgeReady = false;
       }
-      request.reject(new Error(data?.error || "ATW extension request failed."));
+      request.reject(new Error(data?.error || "Importon Bridge extension request failed."));
       return;
     }
 
@@ -394,7 +394,7 @@
   });
 
   async function updateExtensionStatus({ attempts = 4, delayMs = 700 } = {}) {
-    setExtensionStatus("Checking the ATW extension bridge on this admin tab...", "checking");
+    setExtensionStatus("Checking the Importon Bridge extension bridge on this admin tab...", "checking");
 
     let lastError = null;
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -406,7 +406,7 @@
         const currentBase = String(cfg.siteBaseUrl || "").replace(/\/+$/, "");
         if (!configured) {
           setExtensionStatus(
-            "Extension detected, but the saved WordPress credentials are incomplete. Open ATW settings in the extension and save the site URL, username, and Application Password.",
+            "Extension detected, but the saved WordPress credentials are incomplete. Open Importon Bridge settings in the extension and save the site URL, username, and Application Password.",
             "incomplete"
           );
           return false;
@@ -421,7 +421,7 @@
         if (!status?.authOk) {
           const reason = status?.authError ? ` (${status.authError})` : "";
           setExtensionStatus(
-            `Extension credentials failed authentication${reason}. Open ATW extension settings, re-enter the Application Password, then click Test Connection to save.`,
+            `Extension credentials failed authentication${reason}. Open Importon Bridge extension settings, re-enter the Application Password, then click Test Connection to save.`,
             "auth_failed"
           );
           return false;
@@ -440,10 +440,10 @@
     }
 
     const fallback = isInvalidatedBridgeError(lastError)
-      ? "The ATW extension was reloaded or updated after this admin tab was opened. Click Refresh Extension Status, or reload this wp-admin tab once to reconnect the bridge."
+      ? "The Importon Bridge extension was reloaded or updated after this admin tab was opened. Click Refresh Extension Status, or reload this wp-admin tab once to reconnect the bridge."
       : !state.bridgeReady
-      ? "The ATW extension bridge is not loaded on this admin tab yet. Click Refresh Extension Status, open the ATW extension once on this tab, or reload the page."
-      : String(lastError?.message || lastError || "ATW extension is unavailable on this admin page.");
+      ? "The Importon Bridge extension bridge is not loaded on this admin tab yet. Click Refresh Extension Status, open the Importon Bridge extension once on this tab, or reload the page."
+      : String(lastError?.message || lastError || "Importon Bridge extension is unavailable on this admin page.");
     setExtensionStatus(fallback, "unavailable");
     return false;
   }
@@ -458,7 +458,7 @@
   async function startBatch(urls, categoryId, sourceRunId = "") {
     const extensionReady = await ensureExtensionReady();
     if (!extensionReady) {
-      throw new Error("The ATW extension is not ready on this admin tab. Refresh the status, then try again.");
+      throw new Error("The Importon Bridge extension is not ready on this admin tab. Refresh the status, then try again.");
     }
 
     const created = await ajax("awi_url_import_create_run", {
@@ -543,7 +543,7 @@
     if (state.processing || !state.recentRuns.length) {
       return;
     }
-    if (!window.confirm("Clear all recent ATW import runs?")) {
+    if (!window.confirm("Clear all recent Importon Bridge import runs?")) {
       return;
     }
 

@@ -14,17 +14,7 @@ final class AWI_Url_Import {
 		add_action( 'wp_ajax_awi_url_import_get_run', array( __CLASS__, 'ajax_get_run' ) );
 		add_action( 'wp_ajax_awi_url_import_recent_runs', array( __CLASS__, 'ajax_recent_runs' ) );
 		add_action( 'wp_ajax_awi_url_import_clear_runs', array( __CLASS__, 'ajax_clear_runs' ) );
-		add_action( 'wp_ajax_awi_get_quota', array( __CLASS__, 'ajax_get_quota' ) );
 		add_action( 'admin_post_awi_url_import_failed_log', array( __CLASS__, 'handle_failed_log' ) );
-	}
-
-	public static function ajax_get_quota(): void {
-		check_ajax_referer( self::AJAX_NONCE, 'nonce' );
-		if ( ! self::can_manage() ) {
-			wp_send_json_error( array( 'message' => 'Permission denied.' ), 403 );
-		}
-		$status = AWI_Rate_Limiter::get_status( (int) get_current_user_id() );
-		wp_send_json_success( array( 'quota' => $status ) );
 	}
 
 	public static function can_manage(): bool {
@@ -294,18 +284,18 @@ final class AWI_Url_Import {
 
 	public static function handle_failed_log(): void {
 		if ( ! self::can_manage() ) {
-			wp_die( esc_html__( 'You do not have permission to access this log.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'You do not have permission to access this log.', 'importon-bridge' ) );
 		}
 
 		$run_id = isset( $_GET['run_id'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['run_id'] ) ) : '';
 		$nonce  = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( (string) wp_unslash( $_GET['_wpnonce'] ) ) : '';
 		if ( ! wp_verify_nonce( $nonce, 'awi_url_import_failed_log_' . $run_id ) ) {
-			wp_die( esc_html__( 'Invalid log link.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'Invalid log link.', 'importon-bridge' ) );
 		}
 
 		$run = self::load_run( $run_id );
 		if ( ! $run ) {
-			wp_die( esc_html__( 'Import run not found.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'Import run not found.', 'importon-bridge' ) );
 		}
 
 		$paths = self::ensure_storage_paths();
@@ -319,7 +309,7 @@ final class AWI_Url_Import {
 		}
 
 		if ( ! file_exists( $log_path ) ) {
-			wp_die( esc_html__( 'Failed log is not available.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'Failed log is not available.', 'importon-bridge' ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -330,7 +320,7 @@ final class AWI_Url_Import {
 			$log_contents = (string) $wp_filesystem->get_contents( $log_path );
 		}
 		if ( $log_contents === '' && filesize( $log_path ) > 0 ) {
-			wp_die( esc_html__( 'Failed log is not available.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'Failed log is not available.', 'importon-bridge' ) );
 		}
 
 		nocache_headers();
@@ -521,7 +511,7 @@ final class AWI_Url_Import {
 		}
 
 		$lines   = array();
-		$lines[] = 'ATW URL Import Failed Log';
+		$lines[] = 'Importon Bridge URL Import Failed Log';
 		$lines[] = 'Run ID: ' . $run_id;
 		$lines[] = 'Category: ' . (string) ( $run['category_path'] ?? '' );
 		$lines[] = 'Status: ' . (string) ( $run['status'] ?? '' );
@@ -679,7 +669,7 @@ final class AWI_Url_Import {
 			return new WP_Error( 'awi_url_import_uploads', (string) $uploads['error'] );
 		}
 
-		$base_dir = trailingslashit( (string) $uploads['basedir'] ) . 'atw-url-import';
+		$base_dir = trailingslashit( (string) $uploads['basedir'] ) . 'importon-bridge';
 		$runs_dir = trailingslashit( $base_dir ) . 'runs';
 		$logs_dir = trailingslashit( $base_dir ) . 'logs';
 

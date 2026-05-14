@@ -1,18 +1,18 @@
-# ATW — Alibaba Product Importer
+# Importon Bridge
 
-> Import Alibaba products into WooCommerce in one click — via a companion Chrome extension, a secure REST API, and optional AI-powered description rewriting.
+> Product sync for WooCommerce via a companion browser extension, a secure REST API, and optional AI-powered description rewriting.
 
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue?logo=wordpress)](https://wordpress.org)
 [![WooCommerce](https://img.shields.io/badge/WooCommerce-8.0%2B-purple?logo=woocommerce)](https://woocommerce.com)
 [![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4?logo=php)](https://php.net)
 [![License](https://img.shields.io/badge/License-GPLv2%2B-green)](https://www.gnu.org/licenses/gpl-2.0.html)
-[![Version](https://img.shields.io/badge/Version-0.1.0-orange)](https://github.com/nasratulnayem/atw-alibaba-product-importer/releases)
+[![Version](https://img.shields.io/badge/Version-0.1.0-orange)](https://github.com/nasratulnayem/importon-bridge/releases/latest/download/importon-bridge-extension.zip)
 
 ---
 
 ## What It Does
 
-Browse any Alibaba product page, click the ATW Chrome extension, and the product is **instantly created in your WooCommerce store** — complete with title, description, pricing, images, attributes, and variations.
+Importon Bridge is built for moving supplier product data, including supported Alibaba product pages, into your WooCommerce store with title, description, pricing, images, attributes, and variations.
 
 No CSV files. No copy-pasting. No manual data entry.
 
@@ -42,7 +42,7 @@ No CSV files. No copy-pasting. No manual data entry.
 Alibaba Product Page
        │
        ▼
- ATW Chrome Extension  ──────────────────────────────────┐
+ Browser Extension  ─────────────────────────────────────┐
  (reads page data in browser)                            │
        │                                                 │
        ▼                                                 ▼
@@ -74,19 +74,19 @@ POST /wp-json/awi/v1/import              Batch URL Import (Admin)
 
 ### Plugin
 
-1. Download the latest release from the [Releases page](https://github.com/nasratulnayem/atw-alibaba-product-importer/releases/latest).
+1. Download the latest release from your project website or release page.
 2. Upload to `/wp-content/plugins/` and activate.
 3. WooCommerce must be installed and active.
 
 ### Chrome Extension
 
-1. Go to **ATW → Settings** in your WordPress admin.
+1. Go to **Importon Bridge → Settings** in your WordPress admin.
 2. Click **Download Extension** and load it in Chrome (`chrome://extensions` → Developer mode → Load unpacked).
 3. On the Settings page, create an **Application Password** and paste it into the extension along with your site URL and username.
 
 ### AI Rewriting (Optional)
 
-1. Go to **ATW → Settings → AI Rewrite Settings**.
+1. Go to **Importon Bridge → Settings → AI Rewrite Settings**.
 2. Enter an OpenAI and/or Gemini API key.
 3. Select provider order and preferred model.
 4. Enable the rewrite toggle.
@@ -131,9 +131,9 @@ AI rewrites product **title**, **short description**, and **long description** u
 
 ## Screenshots
 
-### 1. ATW Settings and AI Rewrite Controls
+### 1. Importon Bridge Settings and AI Rewrite Controls
 
-![ATW Settings and AI Rewrite Controls](assets/screenshot-1.png)
+![Importon Bridge Settings and AI Rewrite Controls](assets/screenshot-1.png)
 
 ### 2. Application Password and Extension Connection
 
@@ -158,8 +158,8 @@ AI rewrites product **title**, **short description**, and **long description** u
 ## File Structure
 
 ```
-atw-alibaba-product-importer/
-├── atw-alibaba-product-importer.php   # Plugin entry point
+importon-bridge/
+├── importon-bridge.php   # Plugin entry point
 ├── README.txt                         # WordPress.org readme
 ├── license.txt                        # GPL license
 ├── assets/

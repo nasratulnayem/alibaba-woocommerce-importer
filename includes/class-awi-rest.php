@@ -128,10 +128,10 @@ final class AWI_Rest {
 		$raw_header = '';
 		foreach ( array(
 			$request->get_header( 'authorization' ),            // WP parsed header (works on most hosts)
-			isset( $_SERVER['HTTP_AUTHORIZATION'] )          ? wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] )          : '',
-			isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ? wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) : '',
+			isset( $_SERVER['HTTP_AUTHORIZATION'] )          ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) )          : '',
+			isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) : '',
 			// FastCGI / CGI fallback (requires RewriteRule in .htaccess or server config)
-			isset( $_SERVER['HTTP_X_AUTHORIZATION'] )        ? wp_unslash( $_SERVER['HTTP_X_AUTHORIZATION'] )        : '',
+			isset( $_SERVER['HTTP_X_AUTHORIZATION'] )        ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_AUTHORIZATION'] ) )        : '',
 		) as $candidate ) {
 			if ( is_string( $candidate ) && trim( $candidate ) !== '' ) {
 				$raw_header = trim( $candidate );
@@ -154,8 +154,8 @@ final class AWI_Rest {
 		// Fallback to PHP_AUTH_* (populated by Apache mod_php automatically).
 		if ( $user === '' && isset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] ) ) {
 			$src  = 'php_auth';
-			$user = (string) wp_unslash( $_SERVER['PHP_AUTH_USER'] );
-			$pass = (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] );
+			$user = sanitize_text_field( wp_unslash( $_SERVER['PHP_AUTH_USER'] ) );
+			$pass = sanitize_text_field( wp_unslash( $_SERVER['PHP_AUTH_PW'] ) );
 		}
 
 		return array(
@@ -353,7 +353,7 @@ final class AWI_Rest {
 		}
 
 	public static function debug_permissions_check( WP_REST_Request $request ): bool {
-		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		if ( in_array( $ip, array( '127.0.0.1', '::1' ), true ) ) {
 			return true;
 		}
@@ -367,9 +367,9 @@ final class AWI_Rest {
 
 		$hdr = '';
 		if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-			$hdr = (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] );
+			$hdr = sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
 		} elseif ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-			$hdr = (string) wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] );
+			$hdr = sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
 		}
 
 		$scheme = '';
@@ -378,8 +378,8 @@ final class AWI_Rest {
 			$scheme = isset( $parts[0] ) ? strtolower( (string) $parts[0] ) : '';
 		}
 
-		$php_auth_user = isset( $_SERVER['PHP_AUTH_USER'] ) ? (string) wp_unslash( $_SERVER['PHP_AUTH_USER'] ) : '';
-		$php_auth_pw   = isset( $_SERVER['PHP_AUTH_PW'] ) ? (string) wp_unslash( $_SERVER['PHP_AUTH_PW'] ) : '';
+		$php_auth_user = isset( $_SERVER['PHP_AUTH_USER'] ) ? sanitize_text_field( wp_unslash( $_SERVER['PHP_AUTH_USER'] ) ) : '';
+		$php_auth_pw   = isset( $_SERVER['PHP_AUTH_PW'] ) ? sanitize_text_field( wp_unslash( $_SERVER['PHP_AUTH_PW'] ) ) : '';
 
 			$user_id = (int) get_current_user_id();
 
@@ -435,8 +435,8 @@ final class AWI_Rest {
 				'home'     => home_url( '/' ),
 				'rest'     => rest_url(),
 				'origin'   => $origin,
-				'remote'   => isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '',
-				'proto'    => isset( $_SERVER['SERVER_PROTOCOL'] ) ? (string) wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) : '',
+				'remote'   => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '',
+				'proto'    => isset( $_SERVER['SERVER_PROTOCOL'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ) : '',
 				'auth'     => array(
 					'http_authorization_present' => $hdr !== '',
 					'http_authorization_len'     => $hdr !== '' ? strlen( $hdr ) : 0,
@@ -493,11 +493,11 @@ final class AWI_Rest {
 			$user_id = get_current_user_id();
 			$user    = wp_get_current_user();
 
-			// Revoke any existing "ATW Extension" password so we always return a fresh one.
+			// Revoke any existing "Importon Bridge Extension" password so we always return a fresh one.
 			$existing = WP_Application_Passwords::get_user_application_passwords( $user_id );
 			if ( is_array( $existing ) ) {
 				foreach ( $existing as $pw ) {
-					if ( isset( $pw['name'] ) && $pw['name'] === 'ATW Extension' ) {
+					if ( isset( $pw['name'] ) && $pw['name'] === 'Importon Bridge Extension' ) {
 						WP_Application_Passwords::delete_application_password( $user_id, (string) $pw['uuid'] );
 					}
 				}
@@ -506,7 +506,7 @@ final class AWI_Rest {
 			$result = WP_Application_Passwords::create_new_application_password(
 				$user_id,
 				array(
-					'name'   => 'ATW Extension',
+					'name'   => 'Importon Bridge Extension',
 					'app_id' => 'atw-woocommerce-importer',
 				)
 			);
@@ -521,7 +521,7 @@ final class AWI_Rest {
 			[ $plain_password ] = $result;
 
 			$token      = bin2hex( random_bytes( 24 ) );
-			$origin_ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+			$origin_ip  = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 
 			set_transient(
 				'awi_pending_connect_' . $token,
@@ -561,7 +561,7 @@ final class AWI_Rest {
 			// Skipped when origin_ip is empty (old transients) or when behind a reverse proxy
 			// where REMOTE_ADDR may differ from the browser IP.
 			$stored_ip  = isset( $data['origin_ip'] ) ? (string) $data['origin_ip'] : '';
-			$request_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) wp_unslash( $_SERVER['REMOTE_ADDR'] ) : '';
+			$request_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 			if ( $stored_ip !== '' && $request_ip !== '' && $stored_ip !== $request_ip ) {
 				// Consume token to prevent replay attempts, then reject.
 				delete_transient( 'awi_pending_connect_' . $token );
@@ -687,21 +687,6 @@ final class AWI_Rest {
 					'error' => 'Invalid JSON payload.',
 				),
 				400
-			);
-		}
-
-		$import_user_id = (int) get_current_user_id();
-		$quota          = AWI_Rate_Limiter::check( $import_user_id );
-		if ( ! $quota['allowed'] ) {
-			return new WP_REST_Response(
-				array(
-					'ok'               => false,
-					'error'            => 'rate_limited',
-					'message'          => 'Import limit reached. Cooldown expires at ' . gmdate( 'Y-m-d H:i', $quota['cooldown_until'] ) . ' UTC.',
-					'cooldown_until'   => $quota['cooldown_until'],
-					'cooldown_seconds' => $quota['cooldown_seconds'],
-				),
-				429
 			);
 		}
 
@@ -945,23 +930,14 @@ final class AWI_Rest {
 		// Theme compatibility: some galleries (e.g. Templatemela) read video URL from attachment meta.
 		self::sync_templatemela_gallery_video_meta( $product_id, $video_urls );
 
-		// Record successful import against the user's rate limit quota.
-		$quota_after = AWI_Rate_Limiter::record( $import_user_id );
-
 		return new WP_REST_Response(
 			array(
-				'ok'          => true,
-				'product_id'  => $product_id,
-				'created'     => ! $is_update,
-				'updated'     => $is_update,
-				'sku'         => $sku,
-				'source_url'  => $source_url,
-				'quota'       => array(
-					'remaining'        => $quota_after['remaining'],
-					'cooldown_until'   => $quota_after['cooldown_until'],
-					'cooldown_seconds' => $quota_after['cooldown_seconds'],
-					'window_reset_at'  => $quota_after['window_reset_at'],
-				),
+				'ok'         => true,
+				'product_id' => $product_id,
+				'created'    => ! $is_update,
+				'updated'    => $is_update,
+				'sku'        => $sku,
+				'source_url' => $source_url,
 			),
 			200
 		);

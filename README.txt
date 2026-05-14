@@ -1,6 +1,6 @@
-=== ATW — Alibaba Product Importer ===
+=== Importon Bridge ===
 Contributors: nasratulnayem
-Tags: woocommerce, import, alibaba, products, chrome extension
+Tags: product sync, importer, chrome extension, catalog sync, ai rewrite
 Requires at least: 6.0
 Tested up to: 6.9
 Requires PHP: 7.4
@@ -8,11 +8,11 @@ Stable tag: 0.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Import Alibaba products into WooCommerce via a Chrome extension and REST API, with optional AI-powered description rewriting.
+Product sync for WooCommerce via a browser extension and REST API, with optional AI-powered description rewriting.
 
 == Description ==
 
-ATW — Alibaba Product Importer connects a companion Chrome extension to your WooCommerce store. Browse any Alibaba product page, click the extension, and the product is created in WooCommerce automatically — including title, description, pricing, images, attributes, and variations.
+Importon Bridge connects a companion browser extension to your WooCommerce store. It is built for importing supplier product data, including supported Alibaba product pages, into WooCommerce with product details, pricing, images, attributes, and variations.
 
 **Key features:**
 
@@ -43,11 +43,11 @@ The plugin also facilitates importing product data that originates from Alibaba.
 
 == Installation ==
 
-1. Upload the `atw-alibaba-product-importer` folder to `/wp-content/plugins/`.
+1. Upload the `importon-bridge` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the **Plugins** menu in WordPress.
 3. Ensure WooCommerce is installed and active.
-4. Go to **ATW > Settings** in the WordPress admin menu.
-5. Download the ATW Chrome extension from the link on the settings page and install it in Chrome.
+4. Go to **Importon Bridge > Settings** in the WordPress admin menu.
+5. Install the companion browser extension and open its settings.
 6. Create an Application Password on the settings page and paste it into the Chrome extension settings along with your site URL and WordPress username.
 7. Browse to any Alibaba product page and click the extension icon to import.
 
@@ -71,7 +71,7 @@ The plugin is designed for single-site installations. Multisite support is not t
 
 = Where are import run logs stored? =
 
-Run logs are stored in `wp-content/uploads/atw-url-import/`. They are deleted when you use the "Clear All" button on the URL Import screen, or when the plugin is uninstalled.
+Run logs are stored in `wp-content/uploads/importon-bridge/`. They are deleted when you use the "Clear All" button on the URL Import screen, or when the plugin is uninstalled.
 
 == Screenshots ==
 

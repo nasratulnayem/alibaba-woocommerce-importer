@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Importon Bridge Extension Settings</title>
+    <style>
+      :root{
+        --bg:#ffffff;
+        --card:#ffffff;
+        --card-soft:#f8fafc;
+        --text:#0f172a;
+        --muted:#475569;
+        --stroke:#e2e8f0;
+        --accent:#2563eb;
+        --focus:rgba(37,99,235,.25);
+      }
+      html[data-theme="dark"]{
+        --bg:#0b1220;
+        --card:#0f172a;
+        --card-soft:#111c33;
+        --text:#e2e8f0;
+        --muted:#94a3b8;
+        --stroke:#273449;
+        --accent:#60a5fa;
+        --focus:rgba(96,165,250,.28);
+      }
+      *{ box-sizing:border-box; }
+      html,body{ margin:0; padding:0; }
+      body{
+        min-height:100vh;
+        background:var(--bg);
+        color:var(--text);
+        font:13px/1.4 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      }
+      .shell{ max-width:980px; margin:26px auto; padding:0 18px 30px; }
+      .top{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:12px 14px;
+        border:1px solid var(--stroke);
+        border-radius:14px;
+        background:var(--card);
+      }
+      .brand-wrap{ display:flex; align-items:center; gap:10px; }
+      .logo-icon{ width:28px; height:28px; border-radius:8px; }
+      .brand h1{ margin:0; font-size:18px; font-weight:800; }
+      .brand .sub{ color:var(--muted); font-weight:600; margin-top:2px; }
+      .top-actions{ display:flex; gap:8px; align-items:center; }
+      .mode-toggle,
+      .metaUrl{
+        border:1px solid var(--stroke);
+        background:var(--card-soft);
+        color:var(--text);
+        border-radius:999px;
+        padding:7px 11px;
+        font-size:12px;
+        font-weight:700;
+        text-decoration:none;
+      }
+      .mode-toggle{ cursor:pointer; }
+      .mode-toggle:hover,
+      .metaUrl:hover{ border-color:var(--accent); color:var(--accent); }
+
+      .grid{ margin-top:12px; display:grid; grid-template-columns:1.15fr .85fr; gap:12px; }
+      @media (max-width:880px){ .grid{ grid-template-columns:1fr; } }
+
+      .card{
+        border:1px solid var(--stroke);
+        border-radius:14px;
+        background:var(--card);
+        padding:13px;
+      }
+      .card h2{ margin:0 0 9px; font-size:14px; font-weight:800; }
+      .hint{ margin:6px 0 0; color:var(--muted); font-weight:600; font-size:12px; }
+
+      .field{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+      .lbl{ color:var(--muted); font-weight:700; font-size:12px; }
+      .inp{
+        width:100%;
+        border-radius:10px;
+        border:1px solid var(--stroke);
+        background:var(--card-soft);
+        color:var(--text);
+        padding:10px 11px;
+        outline:none;
+      }
+      .inp:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--focus); }
+      .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      @media (max-width:620px){ .row2{ grid-template-columns:1fr; } }
+
+      .pill{ margin-top:10px; display:flex; flex-wrap:wrap; gap:10px; color:var(--text); font-weight:600; }
+      .pill label{ display:inline-flex; gap:8px; align-items:center; }
+      .pill input{ accent-color:var(--accent); }
+
+      .actions{ margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+      .btn{
+        border:1px solid var(--stroke);
+        background:var(--card-soft);
+        color:var(--text);
+        border-radius:999px;
+        padding:9px 14px;
+        font-weight:700;
+        cursor:pointer;
+      }
+      .btn:hover{ border-color:var(--accent); color:var(--accent); }
+      .btn:focus{ outline:none; box-shadow:0 0 0 3px var(--focus); }
+      .status{ min-height:18px; color:var(--muted); font-weight:700; }
+
+      .note{
+        margin-top:10px;
+        border:1px solid var(--stroke);
+        border-radius:12px;
+        background:var(--card-soft);
+        padding:11px;
+        color:var(--muted);
+        font-weight:600;
+      }
+      code{
+        background:var(--bg);
+        border:1px solid var(--stroke);
+        padding:2px 6px;
+        border-radius:8px;
+        user-select:all;
+      }
+      .footer{ margin-top:12px; color:var(--muted); font-weight:600; }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="top">
+        <div class="brand-wrap">
+          <img src="import.png" alt="Importer" class="logo-icon" />
+          <div class="brand">
+            <h1>Importon Bridge Extension</h1>
+            <div class="sub">Store sync settings</div>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button id="themeToggle" class="mode-toggle" type="button">Dark</button>
+          <a class="metaUrl" href="https://github.com/nasratulnayem/importon-bridge" target="_blank" rel="noreferrer">Importon Bridge repo</a>
+        </div>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Connection</h2>
+          <div class="field">
+            <div class="lbl">WordPress Base URL</div>
+            <input id="wpBaseUrl" class="inp" type="url" placeholder="https://example.com" />
+            <div class="hint">Example: <code>https://example.com</code></div>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <div class="lbl">Username</div>
+              <input id="wpUser" class="inp" type="text" placeholder="admin" />
+            </div>
+            <div class="field">
+              <div class="lbl">Application Password</div>
+              <input id="wpAppPassword" class="inp" type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" />
+            </div>
+          </div>
+
+          <div class="note">
+            Use a WordPress <strong>Application Password</strong> (not your login password).
+            Create it in WordPress: <code>Importon Bridge → Settings</code> (recommended) or <code>Users → Profile → Application Passwords</code>.
+          </div>
+
+          <div class="actions">
+            <button id="saveBtn" class="btn">Save</button>
+            <button id="testBtn" class="btn">Test Connection</button>
+            <span id="status" class="status"></span>
+          </div>
+        </section>
+
+        <aside class="card">
+          <h2>Import Behavior</h2>
+
+          <div class="field">
+            <div class="lbl">Max items on search page</div>
+            <input id="maxPageItems" class="inp" type="number" min="1" max="200" value="20" />
+            <div class="hint">Controls the “Import page” action.</div>
+          </div>
+
+          <div class="pill">
+            <label><input id="updateExisting" type="checkbox" /> Update existing (by SKU)</label>
+            <label><input id="downloadImages" type="checkbox" /> Download images</label>
+            <label><input id="showCardButtons" type="checkbox" /> Show card buttons</label>
+          </div>
+
+          <div class="note">Tip: Keep “Show card buttons” ON for one-click imports on search results pages.</div>
+        </aside>
+      </div>
+
+      <div class="footer">Built for dropshipping workflows</div>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

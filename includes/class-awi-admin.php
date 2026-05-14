@@ -14,6 +14,7 @@ final class AWI_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_assets' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_show_app_passwords_notice' ) );
 		add_action( 'admin_post_awi_enable_app_passwords', array( __CLASS__, 'handle_enable_app_passwords' ) );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_handle_legacy_redirect' ) );
 	}
 
 	public static function maybe_show_app_passwords_notice(): void {
@@ -34,10 +35,10 @@ final class AWI_Admin {
 		?>
 		<div class="notice notice-warning">
 			<p>
-				<strong><?php esc_html_e( 'ATW — Alibaba Product Importer:', 'atw-alibaba-product-importer' ); ?></strong>
-				<?php esc_html_e( 'Application Passwords are not yet enabled on this site. The Chrome extension will not be able to authenticate until they are enabled.', 'atw-alibaba-product-importer' ); ?>
+				<strong><?php esc_html_e( 'Importon Bridge:', 'importon-bridge' ); ?></strong>
+				<?php esc_html_e( 'Application Passwords are not yet enabled on this site. The Chrome extension will not be able to authenticate until they are enabled.', 'importon-bridge' ); ?>
 				<a href="<?php echo esc_url( $action_url ); ?>" class="button button-secondary" style="margin-left:8px;">
-					<?php esc_html_e( 'Enable Application Passwords', 'atw-alibaba-product-importer' ); ?>
+					<?php esc_html_e( 'Enable Application Passwords', 'importon-bridge' ); ?>
 				</a>
 			</p>
 		</div>
@@ -47,12 +48,12 @@ final class AWI_Admin {
 	public static function handle_enable_app_passwords(): void {
 		check_admin_referer( 'awi_enable_app_passwords' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'You do not have permission to do this.', 'importon-bridge' ) );
 		}
 		if ( function_exists( 'get_main_network_id' ) && function_exists( 'update_network_option' ) ) {
 			update_network_option( get_main_network_id(), 'using_application_passwords', 1 );
 		}
-		wp_safe_redirect( admin_url( 'admin.php?page=atw&awi_app_pw_enabled=1' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=importon-bridge&awi_app_pw_enabled=1' ) );
 		exit;
 	}
 
@@ -60,39 +61,39 @@ final class AWI_Admin {
 		$cap = class_exists( 'WooCommerce' ) ? 'manage_woocommerce' : 'manage_options';
 
 		self::$hook_suffix = (string) add_menu_page(
-			'ATW',
-			'ATW',
+			'Importon Bridge',
+			'Importon Bridge',
 			$cap,
-			'atw',
+			'importon-bridge',
 			array( __CLASS__, 'render_page' ),
 			'dashicons-store',
 			56
 		);
 
 		self::$url_import_hook_suffix = (string) add_submenu_page(
-			'atw',
-			__( 'URL Import', 'atw-alibaba-product-importer' ),
-			__( 'URL Import', 'atw-alibaba-product-importer' ),
+			'importon-bridge',
+			__( 'URL Import', 'importon-bridge' ),
+			__( 'URL Import', 'importon-bridge' ),
 			$cap,
-			'atw-url-import',
+			'importon-bridge-url-import',
 			array( __CLASS__, 'render_url_import_page' )
 		);
 
 		self::$legacy_hook_suffix = (string) add_submenu_page(
 			null,
-			__( 'Alibaba Import', 'atw-alibaba-product-importer' ),
-			__( 'Alibaba Import', 'atw-alibaba-product-importer' ),
+			__( 'Legacy Import Redirect', 'importon-bridge' ),
+			__( 'Legacy Import Redirect', 'importon-bridge' ),
 			$cap,
-			'awi-alibaba-import',
+			'awi-importon-bridge-legacy-import',
 			array( __CLASS__, 'render_legacy_redirect' )
 		);
 
 		add_submenu_page(
-			'atw',
-			'ATW Usage',
-			'USAGE',
+			'importon-bridge',
+			'Importon Bridge Usage',
+			'Usage',
 			$cap,
-			'atw-usage',
+			'importon-bridge-usage',
 			array( __CLASS__, 'render_usage_page' )
 		);
 	}
@@ -105,6 +106,16 @@ final class AWI_Admin {
 		wp_register_style( 'awi_admin', false, array(), AWI_VERSION );
 		wp_enqueue_style( 'awi_admin' );
 		wp_add_inline_style( 'awi_admin', self::get_common_admin_css() );
+
+		if ( $hook_suffix === self::$hook_suffix ) {
+			wp_enqueue_script(
+				'awi_admin_settings',
+				plugin_dir_url( AWI_PLUGIN_FILE ) . 'assets/admin-settings.js',
+				array(),
+				AWI_VERSION,
+				true
+			);
+		}
 
 		if ( $hook_suffix === self::$url_import_hook_suffix ) {
 			wp_enqueue_script(
@@ -120,31 +131,34 @@ final class AWI_Admin {
 				'awi_url_import_admin',
 				'awiUrlImportData',
 				array(
-					'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-					'nonce'        => AWI_Url_Import::get_ajax_nonce(),
-					'restNonce'    => wp_create_nonce( 'wp_rest' ),
-					'connectUrl'   => rest_url( 'awi/v1/connect' ),
-					'categories'   => AWI_Url_Import::get_categories(),
-					'latestRun'    => AWI_Url_Import::get_latest_run(),
-					'recentRuns'   => AWI_Url_Import::get_recent_runs( 8, false ),
-					'siteBaseUrl'  => home_url( '/' ),
-					'currentUser'  => $user instanceof WP_User ? (string) $user->user_login : '',
-					'settingsUrl'  => admin_url( 'admin.php?page=atw' ),
-					'quota'        => AWI_Rate_Limiter::get_status( $user instanceof WP_User ? (int) $user->ID : 0 ),
-					'quotaLimit'   => AWI_Rate_Limiter::LIMIT,
+					'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+					'nonce'       => AWI_Url_Import::get_ajax_nonce(),
+					'restNonce'   => wp_create_nonce( 'wp_rest' ),
+					'connectUrl'  => rest_url( 'awi/v1/connect' ),
+					'categories'  => AWI_Url_Import::get_categories(),
+					'latestRun'   => AWI_Url_Import::get_latest_run(),
+					'recentRuns'  => AWI_Url_Import::get_recent_runs( 8, false ),
+					'siteBaseUrl' => home_url( '/' ),
+					'currentUser' => $user instanceof WP_User ? (string) $user->user_login : '',
+					'settingsUrl' => admin_url( 'admin.php?page=importon-bridge' ),
 				)
 			);
 		}
 	}
 
-	public static function render_legacy_redirect(): void {
-		self::assert_access();
+	public static function maybe_handle_legacy_redirect(): void {
+		if ( ! isset( $_GET['page'] ) || sanitize_key( (string) $_GET['page'] ) !== 'awi-importon-bridge-legacy-import' ) {
+			return;
+		}
+		if ( ! self::can_manage() ) {
+			return;
+		}
+		wp_safe_redirect( admin_url( 'admin.php?page=importon-bridge' ), 301 );
+		exit;
+	}
 
-		$url = admin_url( 'admin.php?page=atw' );
-		?>
-		<script>location.href=<?php echo wp_json_encode( $url ); ?>;</script>
-		<p>Redirecting…</p>
-		<?php
+	public static function render_legacy_redirect(): void {
+		// Redirect is handled via admin_init before any output.
 	}
 
 	public static function render_page(): void {
@@ -155,7 +169,7 @@ final class AWI_Admin {
 		$current_user = wp_get_current_user();
 
 		if ( isset( $_GET['awi_app_pw_enabled'] ) ) {
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Application Passwords enabled. The Chrome extension can now authenticate.', 'atw-alibaba-product-importer' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Application Passwords enabled. The Chrome extension can now authenticate.', 'importon-bridge' ) . '</p></div>';
 		}
 
 		// Application Password management.
@@ -168,7 +182,7 @@ final class AWI_Admin {
 			if ( isset( $_POST['awi_create_apppass'] ) && check_admin_referer( 'awi_apppass_action', 'awi_apppass_nonce' ) ) {
 				$pw_name = isset( $_POST['awi_apppass_name'] ) ? sanitize_text_field( wp_unslash( $_POST['awi_apppass_name'] ) ) : '';
 				if ( $pw_name === '' ) {
-					$apppass_error = __( 'Please enter a name for the Application Password.', 'atw-alibaba-product-importer' );
+					$apppass_error = __( 'Please enter a name for the Application Password.', 'importon-bridge' );
 				} else {
 					$result = WP_Application_Passwords::create_new_application_password( $current_user->ID, array( 'name' => $pw_name ) );
 					if ( is_wp_error( $result ) ) {
@@ -176,7 +190,7 @@ final class AWI_Admin {
 					} else {
 						$apppass_new_plain = $result[0];
 						/* translators: %s: Application Password name */
-						$apppass_notice = sprintf( __( 'Application Password created for "%s".', 'atw-alibaba-product-importer' ), esc_html( $pw_name ) );
+						$apppass_notice = sprintf( __( 'Application Password created for "%s".', 'importon-bridge' ), esc_html( $pw_name ) );
 					}
 				}
 			}
@@ -184,12 +198,12 @@ final class AWI_Admin {
 				$uuid = sanitize_text_field( wp_unslash( $_POST['awi_revoke_uuid'] ?? '' ) );
 				if ( $uuid !== '' ) {
 					$del = WP_Application_Passwords::delete_application_password( $current_user->ID, $uuid );
-					$apppass_notice = is_wp_error( $del ) ? $del->get_error_message() : __( 'Application Password revoked.', 'atw-alibaba-product-importer' );
+					$apppass_notice = is_wp_error( $del ) ? $del->get_error_message() : __( 'Application Password revoked.', 'importon-bridge' );
 				}
 			}
 			if ( isset( $_POST['awi_revoke_all_apppass'] ) && check_admin_referer( 'awi_apppass_action', 'awi_apppass_nonce' ) ) {
 				WP_Application_Passwords::delete_all_application_passwords( $current_user->ID );
-				$apppass_notice = __( 'All Application Passwords revoked.', 'atw-alibaba-product-importer' );
+				$apppass_notice = __( 'All Application Passwords revoked.', 'importon-bridge' );
 			}
 		}
 
@@ -202,11 +216,11 @@ final class AWI_Admin {
 		<meta name="awi-url-import-bridge" content="1">
 			<div class="awi-hero awi-hero--settings">
 				<div class="awi-hero-copy">
-					<h1><?php esc_html_e( 'ATW — Alibaba Product Importer', 'atw-alibaba-product-importer' ); ?></h1>
+					<h1><?php esc_html_e( 'Importon Bridge', 'importon-bridge' ); ?></h1>
 					<p>Manage the AI rewrite layer, generate secure WordPress credentials for the extension, and launch bulk imports from a cleaner control panel.</p>
 				</div>
 				<div class="awi-hero-side">
-					<a class="awi-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=atw-url-import' ) ); ?>">Open URL Import</a>
+					<a class="awi-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=importon-bridge-url-import' ) ); ?>">Open URL Import</a>
 				</div>
 			</div>
 
@@ -219,7 +233,7 @@ final class AWI_Admin {
 						</div>
 					</div>
 					<div class="awi-checklist">
-						<div class="awi-checklist-item"><span class="awi-checkmark">1</span><span>Create or rotate a WordPress Application Password for the ATW extension.</span></div>
+						<div class="awi-checklist-item"><span class="awi-checkmark">1</span><span>Create or rotate a WordPress Application Password for the Importon Bridge extension.</span></div>
 						<div class="awi-checklist-item"><span class="awi-checkmark">2</span><span>Set AI keywords and CTA defaults so imported descriptions are rewritten consistently.</span></div>
 						<div class="awi-checklist-item"><span class="awi-checkmark">3</span><span>Use Url Import to run product-detail URLs through the same extension pipeline with logs and retries.</span></div>
 					</div>
@@ -235,7 +249,7 @@ final class AWI_Admin {
 					<div class="awi-info-grid">
 						<div class="awi-info-item">
 							<span class="awi-info-label">URL Import Screen</span>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=atw-url-import' ) ); ?>">Open batch importer</a>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=importon-bridge-url-import' ) ); ?>">Open batch importer</a>
 						</div>
 						<div class="awi-info-item">
 							<span class="awi-info-label">Current User</span>
@@ -267,19 +281,19 @@ final class AWI_Admin {
 						<div class="awi-ai-summary">
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Rewrite</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_enabled'] ? esc_html__( 'Enabled', 'atw-alibaba-product-importer' ) : esc_html__( 'Disabled', 'atw-alibaba-product-importer' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_enabled'] ? esc_html__( 'Enabled', 'importon-bridge' ) : esc_html__( 'Disabled', 'importon-bridge' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Provider</span>
-								<strong class="awi-ai-summary-value"><?php echo 'gemini_first' === $state['ai_provider_order'] ? esc_html__( 'Gemini → OpenAI', 'atw-alibaba-product-importer' ) : esc_html__( 'OpenAI → Gemini', 'atw-alibaba-product-importer' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo 'gemini_first' === $state['ai_provider_order'] ? esc_html__( 'Gemini → OpenAI', 'importon-bridge' ) : esc_html__( 'OpenAI → Gemini', 'importon-bridge' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">OpenAI</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_openai_key_saved'] ? esc_html__( 'Ready', 'atw-alibaba-product-importer' ) : esc_html__( 'Not Set', 'atw-alibaba-product-importer' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_openai_key_saved'] ? esc_html__( 'Ready', 'importon-bridge' ) : esc_html__( 'Not Set', 'importon-bridge' ); ?></strong>
 							</div>
 							<div class="awi-ai-summary-item">
 								<span class="awi-ai-summary-label">Gemini</span>
-								<strong class="awi-ai-summary-value"><?php echo $state['ai_gemini_key_saved'] ? esc_html__( 'Ready', 'atw-alibaba-product-importer' ) : esc_html__( 'Not Set', 'atw-alibaba-product-importer' ); ?></strong>
+								<strong class="awi-ai-summary-value"><?php echo $state['ai_gemini_key_saved'] ? esc_html__( 'Ready', 'importon-bridge' ) : esc_html__( 'Not Set', 'importon-bridge' ); ?></strong>
 							</div>
 						</div>
 
@@ -606,9 +620,9 @@ final class AWI_Admin {
 					<div class="awi-card-head">
 						<div>
 							<h2>Application Passwords</h2>
-							<p>Create Application Passwords for the ATW Chrome extension. Copy the Base URL, Username and password into the extension settings.</p>
+							<p>Create Application Passwords for the Importon Bridge browser extension. Copy the Base URL, Username and password into the extension settings.</p>
 						</div>
-						<a href="https://github.com/nasratulnayem/atw-alibaba-product-importer/releases/latest/download/ATW-Chrome-Extension.zip" target="_blank" rel="noopener noreferrer" class="awi-btn" aria-label="Download ATW Chrome Extension from GitHub" style="flex-shrink:0;white-space:nowrap;min-height:36px;padding:8px 16px;font-size:13px;"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:6px;margin-top:-2px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="2" x2="8" y2="11"/><polyline points="4,8 8,12 12,8"/><line x1="2" y1="14" x2="14" y2="14"/></svg>Download Extension</a>
+						<a href="https://github.com/nasratulnayem/importon-bridge/releases/latest/download/importon-bridge-extension.zip" target="_blank" rel="noopener noreferrer" class="awi-btn" aria-label="Download the Importon Bridge extension" style="flex-shrink:0;white-space:nowrap;min-height:36px;padding:8px 16px;font-size:13px;"><svg style="width:14px;height:14px;vertical-align:middle;margin-right:6px;margin-top:-2px;" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="2" x2="8" y2="11"/><polyline points="4,8 8,12 12,8"/><line x1="2" y1="14" x2="14" y2="14"/></svg>Download Extension</a>
 					</div>
 
 					<div class="awi-info-grid" style="margin-bottom:10px;">
@@ -701,26 +715,13 @@ final class AWI_Admin {
 
 					<div class="awi-note-box" style="margin-top:14px;">
 						<strong>How to connect the extension:</strong><br>
-						1. Type a name (e.g. <em>ATW Extension</em>) and click <strong>Add New Application Password</strong>.<br>
+						1. Type a name (e.g. <em>Importon Bridge Extension</em>) and click <strong>Add New Application Password</strong>.<br>
 						2. Copy the password shown immediately — it won't appear again.<br>
-						3. Open the ATW extension → Settings and paste: Base URL, Username, and the Application Password.
+						3. Open the Importon Bridge extension → Settings and paste: Base URL, Username, and the Application Password.
 					</div>
 				</div>
 			</div>
 
-			<script>
-			function awiModelSelect(provider, value) {
-				var customInput = document.getElementById('awi_' + provider + '_model_custom');
-				if (!customInput) return;
-				if (value === 'custom') {
-					customInput.style.display = '';
-					customInput.focus();
-				} else {
-					customInput.style.display = 'none';
-					customInput.value = value;
-				}
-			}
-			</script>
 		</div>
 		<?php
 	}
@@ -735,96 +736,15 @@ final class AWI_Admin {
 
 			<div class="awi-hero awi-hero--import">
 				<div class="awi-hero-copy">
-					<h1>Batch Import from Alibaba</h1>
-					<p>Queue product-detail URLs, assign a WooCommerce category once, and let the extension run the same import flow with better visibility and retry support.</p>
+					<h1>Batch Product Import</h1>
+					<p>Queue supplier product-detail URLs, assign a WooCommerce category once, and let the extension run the same import flow with better visibility and retry support.</p>
 				</div>
 				<div class="awi-hero-side">
 					<div class="awi-hero-actions">
 						<button type="button" class="awi-ghost-btn" id="awi-url-import-extension-refresh">Refresh Extension Status</button>
-						<a class="awi-ghost-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=atw' ) ); ?>">Settings</a>
+						<a class="awi-ghost-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=importon-bridge' ) ); ?>">Settings</a>
 					</div>
 				</div>
-			</div>
-
-			<?php
-			$quota_init  = AWI_Rate_Limiter::get_status( (int) wp_get_current_user()->ID );
-			$q_is_pro    = ! empty( $quota_init['is_pro'] );
-			$q_remaining = $q_is_pro ? -1 : (int) $quota_init['remaining'];
-			$q_limit     = AWI_Rate_Limiter::LIMIT;
-			$q_blocked   = ! $quota_init['allowed'];
-			$q_pct       = ( ! $q_is_pro && $q_limit > 0 ) ? round( ( ( $q_limit - max( 0, $q_remaining ) ) / $q_limit ) * 100 ) : 0;
-
-			// Build upgrade URL only when Freemius SDK is loaded.
-			$upgrade_url = '';
-			if ( function_exists( 'atw_fs' ) && atw_fs() !== null ) {
-				$upgrade_url = atw_fs()->get_upgrade_url();
-			}
-			?>
-			<div class="awi-card awi-card--section" id="awi-quota-card" style="margin-bottom:16px;">
-				<div class="awi-card-head">
-					<div>
-						<h2>Import Quota
-							<?php if ( $q_is_pro ) : ?>
-								<span style="display:inline-flex;align-items:center;margin-left:8px;padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,#0f6fff,#34c3ff);color:#fff;font-size:11px;font-weight:900;letter-spacing:.06em;vertical-align:middle;">PRO</span>
-							<?php endif; ?>
-						</h2>
-						<p>
-							<?php if ( $q_is_pro ) : ?>
-								<?php esc_html_e( 'Pro plan — unlimited imports, no cooldown.', 'atw-alibaba-product-importer' ); ?>
-							<?php else : ?>
-								<?php
-								/* translators: %d: number of free imports allowed per hour. */
-								printf( esc_html__( 'Free plan: %d imports per hour. Limit reached triggers an 8-hour cooldown.', 'atw-alibaba-product-importer' ), (int) $q_limit );
-								?>
-							<?php endif; ?>
-						</p>
-					</div>
-					<?php if ( $q_is_pro ) : ?>
-						<span class="awi-status-pill awi-status-pill--success">Pro</span>
-					<?php else : ?>
-						<span class="awi-status-pill <?php echo $q_blocked ? 'awi-status-pill--danger' : ( $q_remaining <= 5 ? 'awi-status-pill--warning' : 'awi-status-pill--success' ); ?>" id="awi-quota-pill">
-							<?php echo $q_blocked ? esc_html__( 'Blocked', 'atw-alibaba-product-importer' ) : esc_html( $q_remaining . ' left' ); ?>
-						</span>
-					<?php endif; ?>
-				</div>
-
-				<?php if ( ! $q_is_pro ) : ?>
-				<div style="margin-bottom:10px;">
-					<div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:var(--awi-muted);">
-						<span id="awi-quota-label">
-							<?php
-							if ( $q_blocked ) {
-								echo esc_html( AWI_Rate_Limiter::format_status( $quota_init ) );
-							} else {
-								echo esc_html( $q_remaining . ' of ' . $q_limit . ' imports remaining this hour' );
-							}
-							?>
-						</span>
-						<span id="awi-quota-timer" style="font-weight:700;<?php echo ! $q_blocked ? 'display:none;' : ''; ?>"></span>
-					</div>
-					<div class="awi-progress" aria-hidden="true">
-						<div class="awi-progress-bar" id="awi-quota-bar" style="width:<?php echo (int) $q_pct; ?>%;background:<?php echo $q_blocked ? 'var(--awi-danger,#dc2626)' : ( $q_remaining <= 5 ? 'var(--awi-warning,#ca8a04)' : '' ); ?>;"></div>
-					</div>
-				</div>
-
-				<?php if ( $q_blocked ) : ?>
-				<div class="awi-alert awi-alert--danger" id="awi-quota-blocked-msg" style="margin-bottom:10px;">
-					<?php echo esc_html( AWI_Rate_Limiter::format_status( $quota_init ) ); ?>
-				</div>
-				<?php endif; ?>
-
-				<?php if ( $upgrade_url !== '' && ( $q_blocked || $q_remaining <= 5 ) ) : ?>
-				<div class="awi-note-box" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-					<span style="font-size:13px;">
-						<?php esc_html_e( 'Upgrade to Pro for unlimited imports and no cooldown.', 'atw-alibaba-product-importer' ); ?>
-					</span>
-					<a href="<?php echo esc_url( $upgrade_url ); ?>" class="awi-btn" style="flex-shrink:0;min-height:34px;padding:7px 14px;font-size:12px;" target="_blank" rel="noopener">
-						<?php esc_html_e( 'Upgrade to Pro', 'atw-alibaba-product-importer' ); ?>
-					</a>
-				</div>
-				<?php endif; ?>
-
-				<?php endif; // end !$q_is_pro ?>
 			</div>
 
 			<div class="awi-grid awi-grid--import">
@@ -860,13 +780,13 @@ final class AWI_Admin {
 					<div class="awi-card-head">
 						<div>
 							<h2>Extension Status</h2>
-							<p>The batch importer depends on the ATW extension bridge running on this admin tab.</p>
+							<p>The batch importer depends on the Importon Bridge extension bridge running on this admin tab.</p>
 						</div>
 						<span class="awi-status-pill awi-status-pill--neutral" id="awi-url-import-extension-pill">Checking</span>
 					</div>
 
 					<div class="awi-note-box awi-note-box--status awi-note-box--hidden" id="awi-url-import-extension-box" data-tone="neutral">
-						<span id="awi-url-import-extension-status" aria-live="polite">Checking ATW extension...</span>
+						<span id="awi-url-import-extension-status" aria-live="polite">Checking Importon Bridge extension...</span>
 					</div>
 
 
@@ -951,138 +871,12 @@ final class AWI_Admin {
 			</div>
 		</div>
 
-		<script>
-		(function () {
-			var cfg   = window.awiUrlImportData || {};
-			var quota = cfg.quota || {};
-			var limit = cfg.quotaLimit || 20;
-
-			var pill       = document.getElementById('awi-quota-pill');
-			var bar        = document.getElementById('awi-quota-bar');
-			var label      = document.getElementById('awi-quota-label');
-			var timer      = document.getElementById('awi-quota-timer');
-			var blockedMsg = document.getElementById('awi-quota-blocked-msg');
-			var startBtn   = document.getElementById('awi-url-import-start');
-			var retryBtn   = document.getElementById('awi-url-import-retry');
-
-			function pad(n) { return n < 10 ? '0' + n : String(n); }
-
-			function formatCountdown(seconds) {
-				seconds = Math.max(0, Math.floor(seconds));
-				var h = Math.floor(seconds / 3600);
-				var m = Math.floor((seconds % 3600) / 60);
-				var s = seconds % 60;
-				return pad(h) + ':' + pad(m) + ':' + pad(s);
-			}
-
-			function applyQuota(q) {
-				if (!q) return;
-				quota = q;
-				var blocked = !q.allowed;
-				var isPro   = !!q.is_pro;
-				var card    = document.getElementById('awi-quota-card');
-
-				// Pro plan — hide quota card, unlock buttons, done.
-				if (isPro) {
-					if (card) card.style.display = 'none';
-					if (startBtn) startBtn.disabled = false;
-					if (retryBtn) retryBtn.disabled = false;
-					return;
-				}
-				if (card) card.style.display = '';
-
-				var remaining = q.remaining || 0;
-				var pct       = Math.round(((limit - remaining) / limit) * 100);
-
-				// Progress bar.
-				if (bar) {
-					bar.style.width = pct + '%';
-					bar.style.background = blocked ? 'var(--awi-danger,#dc2626)' : (remaining <= 5 ? 'var(--awi-warning,#ca8a04)' : '');
-				}
-
-				// Status pill.
-				if (pill) {
-					pill.className = 'awi-status-pill ' + (blocked ? 'awi-status-pill--danger' : (remaining <= 5 ? 'awi-status-pill--warning' : 'awi-status-pill--success'));
-					pill.textContent = blocked ? 'Blocked' : remaining + ' left';
-				}
-
-				// Label.
-				if (label && !blocked) {
-					label.textContent = remaining + ' of ' + limit + ' imports remaining this hour';
-				}
-
-				// Blocked message banner.
-				if (blockedMsg) {
-					blockedMsg.style.display = blocked ? '' : 'none';
-				}
-
-				// Timer visibility.
-				if (timer) {
-					timer.style.display = blocked ? '' : 'none';
-				}
-
-				// Import buttons.
-				if (startBtn) startBtn.disabled = blocked;
-				if (retryBtn && blocked) retryBtn.disabled = true;
-			}
-
-			// Live countdown tick (runs every second when cooldown active).
-			var countdownInterval = null;
-			function startCountdown(cooldownUntil) {
-				if (countdownInterval) clearInterval(countdownInterval);
-				countdownInterval = setInterval(function () {
-					var remaining = cooldownUntil - Math.floor(Date.now() / 1000);
-					if (!timer) return;
-					if (remaining <= 0) {
-						clearInterval(countdownInterval);
-						timer.textContent = '';
-						pollQuota(); // re-check server state once cooldown expires
-						return;
-					}
-					timer.textContent = formatCountdown(remaining);
-				}, 1000);
-			}
-
-			// Poll server for current quota state.
-			function pollQuota() {
-				if (!cfg.ajaxUrl || !cfg.nonce) return;
-				var body = new URLSearchParams();
-				body.set('action', 'awi_get_quota');
-				body.set('nonce', cfg.nonce);
-				fetch(cfg.ajaxUrl, {
-					method: 'POST',
-					credentials: 'same-origin',
-					headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-					body: body.toString()
-				})
-				.then(function (r) { return r.json(); })
-				.then(function (data) {
-					if (data && data.success && data.data && data.data.quota) {
-						applyQuota(data.data.quota);
-						if (!data.data.quota.allowed && data.data.quota.cooldown_until) {
-							startCountdown(data.data.quota.cooldown_until);
-						}
-					}
-				})
-				.catch(function () {});
-			}
-
-			// Initial render from server-side data.
-			applyQuota(quota);
-			if (quota && !quota.allowed && quota.cooldown_until) {
-				startCountdown(quota.cooldown_until);
-			}
-
-			// Poll every 60 s to keep UI in sync across multiple tabs/extension calls.
-			setInterval(pollQuota, 60000);
-		})();
-		</script>
 		<?php
 	}
 
 	private static function assert_access(): void {
 		if ( ! self::can_manage() ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'atw-alibaba-product-importer' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'importon-bridge' ) );
 		}
 	}
 
@@ -1513,7 +1307,7 @@ final class AWI_Admin {
 				</div>
 				<div class="awi-hero-side">
 					<div class="awi-hero-actions">
-						<a class="awi-ghost-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=atw' ) ); ?>">Settings</a>
+						<a class="awi-ghost-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=importon-bridge' ) ); ?>">Settings</a>
 					</div>
 				</div>
 			</div>
